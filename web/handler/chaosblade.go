@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/caofujiang/winchaos/web/category"
 	"strings"
 	"sync"
 	"time"
@@ -44,6 +45,22 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 	cmd := request.Params["cmd"]
 	if cmd == "" {
 		return transport.ReturnFail(transport.ParameterEmpty, "cmd")
+	}
+
+	tp := request.Params["type"] //  script-delay
+	if tp == "" {
+		return transport.ReturnFail(transport.ParameterEmpty, "type")
+	}
+	val := strings.Split(tp, "-")
+
+	v := category.ChaosbladeType(val[0])
+	switch v {
+	case category.ChaosbladeTypeCPU:
+
+	case category.ChaosbladeTypeMemory:
+
+	case category.ChaosbladeTypeScript:
+	default:
 	}
 	return ch.exec(cmd)
 }
