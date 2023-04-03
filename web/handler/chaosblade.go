@@ -46,13 +46,12 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 	if cmd == "" {
 		return transport.ReturnFail(transport.ParameterEmpty, "cmd")
 	}
-
+	// TODO
 	tp := request.Params["type"] //  script-delay
 	if tp == "" {
 		return transport.ReturnFail(transport.ParameterEmpty, "type")
 	}
 	val := strings.Split(tp, "-")
-
 	v := category.ChaosbladeType(val[0])
 	switch v {
 	case category.ChaosbladeTypeCPU:
@@ -60,6 +59,7 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 	case category.ChaosbladeTypeMemory:
 
 	case category.ChaosbladeTypeScript:
+
 	default:
 	}
 	return ch.exec(cmd)
