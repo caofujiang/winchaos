@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/caofujiang/winchaos/web/category"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -38,28 +39,50 @@ func NewChaosbladeHandler(transportClient *transport.TransportClient) *Chaosblad
 func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Response {
 	logrus.Infof("chaosblade: %+v", request)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	//todo 版本不一致时，需要update,这里是判断是否升级完成
 	//if handler.blade.upgrade.NeedWait() {
 	//	return transport.ReturnFail(transport.Code[transport.Upgrading], "agent is in upgrading")
 	//}
 	cmd := request.Params["cmd"]
 	if cmd == "" {
+		logrus.Warningf("cmd is nil", cmd)
 		return transport.ReturnFail(transport.ParameterEmpty, "cmd")
 	}
-	// TODO
+	// TODO action
 	tp := request.Params["type"] //  script-delay
 	if tp == "" {
 		return transport.ReturnFail(transport.ParameterEmpty, "type")
 	}
+
 	val := strings.Split(tp, "-")
 	v := category.ChaosbladeType(val[0])
 	switch v {
 	case category.ChaosbladeTypeCPU:
+		v1 := category.ChaosbladeCPUType(val[1])
+		cpuCountStr := request.Params["cpuCount"]
+		cpuList := request.Params["cpuList"]
+		cpuPercentStr := request.Params["cpuPercent"]
+		climbTimeStr := request.Params["climbTime"]
+		cpuIndex := request.Params["cpuIndex"]
 
+		cpuCount, _ := strconv.Atoi(cpuCountStr)
+		cpuPercent, _ := strconv.Atoi(cpuPercentStr)
+		climbTime, _ := strconv.Atoi(climbTimeStr)
+		param := &category.Cpuparam{
+			Cbt:        v,
+			Cmt:        v1,
+			CpuCount:   cpuCount,
+			CpuList:    cpuList,
+			CpuPercent: cpuPercent,
+			ClimbTime:  climbTime,
+			CpuIndex:   cpuIndex,
+		}
+		category.CpuResolver(ctx, param)
 	case category.ChaosbladeTypeMemory:
-
 	case category.ChaosbladeTypeScript:
-
 	default:
 	}
 	return ch.exec(cmd)

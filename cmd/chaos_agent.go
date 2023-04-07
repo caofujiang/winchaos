@@ -97,9 +97,6 @@ func writePid(pid int) error {
 }
 
 func GetPidFile() string {
-	//var pidFile = "/var/run/chaos.pid"
-	//var pidFile = "C:\\chaos.pid"
-	//var pidFile = filepath.Join(os.TempDir(), "chaos.pid")
 	var pidFile string
 	if tools.IsWindows() {
 		pidFile = "C:\\chaos.pid"
