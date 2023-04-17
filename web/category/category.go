@@ -4,17 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
-	os_exec "os/exec"
 	"runtime"
 	"strconv"
-	"strings"
-	"syscall"
 	"time"
 
 	"github.com/chaosblade-io/chaosblade-spec-go/log"
 	"github.com/chaosblade-io/chaosblade-spec-go/spec"
-	"github.com/chaosblade-io/chaosblade-spec-go/util"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/sirupsen/logrus"
 )
@@ -22,11 +17,8 @@ import (
 type Cpuparam struct {
 	Cbt        ChaosbladeType
 	Cmt        ChaosbladeCPUType
-	CpuCount   int    `json:"cpuCount"`
-	CpuList    string `json:"cpuList"`
-	CpuPercent int    `json:"cpuPercent"`
-	ClimbTime  int    `json:"climbTime"`
-	CpuIndex   string `json:"cpuIndex"`
+	CpuCount   int `json:"cpuCount"`
+	CpuPercent int `json:"cpuPercent"`
 }
 
 func CpuResolver(ctx context.Context, cpuParam *Cpuparam) {
@@ -49,7 +41,6 @@ func CpuLoadExec(ctx context.Context, cpuParam *Cpuparam) error {
 	if _, ok := spec.IsDestroy(ctx); ok {
 		//return ce.stop(ctx)
 	}
-
 	if cpuParam == nil {
 		logrus.Errorf("cpuParam cannot nil")
 		return errors.New("cpuParam is nil")
@@ -68,14 +59,7 @@ func CpuLoadExec(ctx context.Context, cpuParam *Cpuparam) error {
 		}
 	}
 
-	if cpuParam.ClimbTime != 0 {
-		if cpuParam.ClimbTime > 600 || cpuParam.ClimbTime < 0 {
-			log.Errorf(ctx, "`%d`: climb-time is illegal, climb-time value must be a positive integer and not bigger than 600", cpuParam.ClimbTime)
-			return errors.New("climb-time must be a positive integer and not bigger than 600")
-		}
-	}
-
-	resp := start(ctx, cpuParam.CpuList, cpuParam.CpuCount, cpuParam.CpuPercent, cpuParam.ClimbTime, cpuParam.CpuIndex)
+	resp := start(ctx, cpuParam.CpuCount, cpuParam.CpuPercent)
 	if resp.Code == 200 {
 		logrus.Errorf("start response success")
 		return nil
@@ -84,79 +68,37 @@ func CpuLoadExec(ctx context.Context, cpuParam *Cpuparam) error {
 }
 
 // start burn cpu
-func start(ctx context.Context, cpuList string, cpuCount, cpuPercent, climbTime int, cpuIndexStr string) *spec.Response {
+func start(ctx context.Context, cpuCount, cpuPercent int) *spec.Response {
 	ctx = context.WithValue(ctx, "cpuCount", cpuCount)
-	if cpuList != "" {
-		cores, err := util.ParseIntegerListToStringSlice("cpu-list", cpuList)
-		if err != nil {
-			logrus.Errorf("`%s`: cpu-list is illegal, %s", cpuList, err.Error())
-			return spec.ResponseFailWithFlags(spec.ParameterIllegal, "cpu-list", cpuList, err.Error())
-		}
-		for _, core := range cores {
-			args := fmt.Sprintf(`%s create cpu fullload --cpu-count 1 --cpu-percent %d --climb-time %d --cpu-index %s --uid %s`, os.Args[0], cpuPercent, climbTime, core, ctx.Value(spec.Uid))
-			args = fmt.Sprintf("-c %s %s", core, args)
-			argsArray := strings.Split(args, " ")
-			command := os_exec.CommandContext(ctx, "taskset", argsArray...)
-			command.SysProcAttr = &syscall.SysProcAttr{}
-			if err := command.Start(); err != nil {
-				return spec.ReturnFail(spec.OsCmdExecFailed, fmt.Sprintf("taskset exec failed, %v", err))
-			}
-		}
-		return spec.ReturnSuccess(ctx.Value(spec.Uid))
-	}
-
 	runtime.GOMAXPROCS(cpuCount)
 	log.Debugf(ctx, "cpu counts: %d", cpuCount)
 	slopePercent := float64(cpuPercent)
 
-	var cpuIndex int
-	percpu := false
-	if cpuIndexStr != "" {
-		percpu = true
-		var err error
-		cpuIndex, err = strconv.Atoi(cpuIndexStr)
-		if err != nil {
-			logrus.Errorf("`%s`: cpu-index is illegal, cpu-index value must be a positive integer", cpuIndexStr)
-			return spec.ResponseFailWithFlags(spec.ParameterIllegal, "cpu-index", cpuIndexStr, "it must be a positive integer")
-		}
-	}
+	climbTime := 5
 
 	// make CPU slowly climb to some level, to simulate slow resource competition
 	// which system faults cannot be quickly noticed by monitoring system.
-	slope(ctx, cpuPercent, climbTime, &slopePercent, percpu, cpuIndex)
+	slope(ctx, cpuPercent, climbTime, &slopePercent)
 
 	quota := make(chan int64, cpuCount)
 	for i := 0; i < cpuCount; i++ {
-		go burn(ctx, quota, slopePercent, percpu, cpuIndex)
+		go burn(ctx, quota, slopePercent)
 	}
+
 	for {
-		q := getQuota(ctx, slopePercent, percpu, cpuIndex)
+		q := getQuota(ctx, slopePercent)
 		for i := 0; i < cpuCount; i++ {
 			quota <- q
 		}
 	}
 }
 
-const BurnCpuBin = "chaos_burncpu"
-
-type cpuExecutor struct {
-	//channel spec.Channel
-}
-
-func (ce *cpuExecutor) Name() string {
-	return "cpu"
-}
-
-func (ce *cpuExecutor) SetChannel(channel spec.Channel) {
-	//ce.channel = channel
-}
-
 const period = int64(1000000000)
 
-func slope(ctx context.Context, cpuPercent int, climbTime int, slopePercent *float64, percpu bool, cpuIndex int) {
+func slope(ctx context.Context, cpuPercent int, climbTime int, slopePercent *float64) {
 	if climbTime != 0 {
 		var ticker = time.NewTicker(time.Second)
-		*slopePercent = getUsed(ctx, percpu, cpuIndex)
+		*slopePercent = getUsed(ctx)
 		var startPercent = float64(cpuPercent) - *slopePercent
 		go func() {
 			for range ticker.C {
@@ -170,16 +112,16 @@ func slope(ctx context.Context, cpuPercent int, climbTime int, slopePercent *flo
 	}
 }
 
-func getQuota(ctx context.Context, slopePercent float64, percpu bool, cpuIndex int) int64 {
-	used := getUsed(ctx, percpu, cpuIndex)
-	log.Debugf(ctx, "cpu usage: %f , percpu: %v, cpuIndex %d", used, percpu, cpuIndex)
+func getQuota(ctx context.Context, slopePercent float64) int64 {
+	used := getUsed(ctx)
+	log.Debugf(ctx, "cpu usage: %f", used, )
 	dx := (slopePercent - used) / 100
 	busy := int64(dx * float64(period))
 	return busy
 }
 
-func burn(ctx context.Context, quota <-chan int64, slopePercent float64, percpu bool, cpuIndex int) {
-	q := getQuota(ctx, slopePercent, percpu, cpuIndex)
+func burn(ctx context.Context, quota <-chan int64, slopePercent float64) {
+	q := getQuota(ctx, slopePercent)
 	ds := period - q
 	if ds < 0 {
 		ds = 0
@@ -187,9 +129,11 @@ func burn(ctx context.Context, quota <-chan int64, slopePercent float64, percpu 
 	s, _ := time.ParseDuration(strconv.FormatInt(ds, 10) + "ns")
 	for {
 		startTime := time.Now().UnixNano()
+		t2 := time.Now().Second()
 		select {
 		case offset := <-quota:
 			q = q + offset
+
 			if q < 0 {
 				q = 0
 			}
@@ -198,32 +142,40 @@ func burn(ctx context.Context, quota <-chan int64, slopePercent float64, percpu 
 				ds = 0
 			}
 			s, _ = time.ParseDuration(strconv.FormatInt(ds, 10) + "ns")
+			fmt.Println("startTime++++++++++++++++++++++++", time.Now().Second()-t2)
+			if (time.Now().Second() - t2) > 5 {
+				fmt.Println("time ending1======", time.Now().Second()-t2)
+				break
+			}
+		case <-ctx.Done():
+			times, ok := ctx.Deadline()
+			fmt.Println("cpu演练时间结束啦！---------------", times, ok)
+			break
 		default:
+			fmt.Println("default+++++++++++++++++++", s)
 			for time.Now().UnixNano()-startTime < q {
 			}
 			runtime.Gosched()
 			time.Sleep(s)
+			if (time.Now().Second() - t2) > 5 {
+				fmt.Println("time ending2======", time.Now().Second()-t2)
+				break
+			}
 		}
 	}
 }
 
 // stop burn cpu
-func (ce *cpuExecutor) stop(ctx context.Context) *spec.Response {
+func stop(ctx context.Context) *spec.Response {
 	//ctx = context.WithValue(ctx, "bin", BurnCpuBin)
 	//return exec.Destroy(ctx, ce.channel, "cpu fullload")
 	return nil
 }
 
-func getUsed(ctx context.Context, percpu bool, cpuIndex int) float64 {
-	totalCpuPercent, err := cpu.Percent(time.Second, percpu)
+func getUsed(ctx context.Context) float64 {
+	totalCpuPercent, err := cpu.Percent(time.Second, false)
 	if err != nil {
 		log.Fatalf(ctx, "get cpu usage fail, %s", err.Error())
-	}
-	if percpu {
-		if cpuIndex > len(totalCpuPercent) {
-			log.Fatalf(ctx, "illegal cpu index %d", cpuIndex)
-		}
-		return totalCpuPercent[cpuIndex]
 	}
 	return totalCpuPercent[0]
 }

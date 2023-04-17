@@ -63,22 +63,14 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 	case category.ChaosbladeTypeCPU:
 		v1 := category.ChaosbladeCPUType(val[1])
 		cpuCountStr := request.Params["cpuCount"]
-		cpuList := request.Params["cpuList"]
 		cpuPercentStr := request.Params["cpuPercent"]
-		climbTimeStr := request.Params["climbTime"]
-		cpuIndex := request.Params["cpuIndex"]
-
 		cpuCount, _ := strconv.Atoi(cpuCountStr)
 		cpuPercent, _ := strconv.Atoi(cpuPercentStr)
-		climbTime, _ := strconv.Atoi(climbTimeStr)
 		param := &category.Cpuparam{
 			Cbt:        v,
 			Cmt:        v1,
 			CpuCount:   cpuCount,
-			CpuList:    cpuList,
 			CpuPercent: cpuPercent,
-			ClimbTime:  climbTime,
-			CpuIndex:   cpuIndex,
 		}
 		category.CpuResolver(ctx, param)
 	case category.ChaosbladeTypeMemory:

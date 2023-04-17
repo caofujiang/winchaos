@@ -32,7 +32,7 @@ type requestInterceptorChain struct {
 	doRequestInterceptor
 }
 
-//Handle interceptor. return nil,true if passed, otherwise return response of fail and false
+// Handle interceptor. return nil,true if passed, otherwise return response of fail and false
 func (interceptor *requestInterceptorChain) Handle(request *Request) (*Response, bool) {
 	if response, ok := interceptor.doHandler(request); !ok {
 		return response, ok
@@ -46,7 +46,7 @@ func (interceptor *requestInterceptorChain) Handle(request *Request) (*Response,
 	return nil, true
 }
 
-//Invoke interceptor.
+// Invoke interceptor.
 func (interceptor *requestInterceptorChain) Invoke(request *Request) (*Response, bool) {
 	if response, ok := interceptor.doInvoker(request); !ok {
 		return response, ok

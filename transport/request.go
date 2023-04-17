@@ -45,7 +45,7 @@ func NewRequest() *Request {
 	return request
 }
 
-//AddHeader add metadata to it
+// AddHeader add metadata to it
 func (request *Request) AddHeader(key string, value string) *Request {
 	if key != "" {
 		request.Headers[key] = value
@@ -53,7 +53,7 @@ func (request *Request) AddHeader(key string, value string) *Request {
 	return request
 }
 
-//AddParam add request data to it
+// AddParam add request data to it
 func (request *Request) AddParam(key string, value string) *Request {
 	if key != "" {
 		request.Params[key] = value
@@ -148,7 +148,7 @@ type Uri struct {
 	CompressVersion string
 }
 
-//NewUri: create a new one
+// NewUri: create a new one
 func NewUri(serverName, handlerName string) Uri {
 	return Uri{
 		ServerName:      serverName,

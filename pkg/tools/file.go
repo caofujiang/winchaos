@@ -13,13 +13,13 @@ import (
 	"strings"
 )
 
-//IsExist return true if file exists
+// IsExist return true if file exists
 func IsExist(fileName string) bool {
 	_, err := os.Stat(fileName)
 	return err == nil || os.IsExist(err)
 }
 
-//DeCompressTgz
+// DeCompressTgz
 func DeCompressTgz(tarFile, destPath string) error {
 	file, err := os.Open(tarFile)
 	if err != nil {

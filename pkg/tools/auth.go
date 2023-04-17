@@ -28,21 +28,21 @@ var localAccessKey = ""
 var localSecureKey = ""
 var mutex = sync.RWMutex{}
 
-//GetAccessKey
+// GetAccessKey
 func GetAccessKey() string {
 	mutex.RLock()
 	defer mutex.RUnlock()
 	return localAccessKey
 }
 
-//GetSecureKey
+// GetSecureKey
 func GetSecureKey() string {
 	mutex.RLock()
 	defer mutex.RUnlock()
 	return localSecureKey
 }
 
-//Sign
+// Sign
 func Sign(signData string) string {
 	sum256 := sha256.Sum256([]byte((signData + localSecureKey)))
 	encodeToString := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%x", string(sum256[:]))))
