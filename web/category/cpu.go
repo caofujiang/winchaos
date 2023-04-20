@@ -2,14 +2,13 @@ package category
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/chaosblade-io/chaosblade-spec-go/log"
 	"os"
 	"runtime"
 	"strconv"
 	"time"
 
+	"github.com/caofujiang/winchaos/transport"
 	"github.com/chaosblade-io/chaosblade-spec-go/spec"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/sirupsen/logrus"
@@ -22,53 +21,42 @@ type Cpuparam struct {
 	CpuPercent int `json:"cpuPercent"`
 }
 
-func CpuResolver(ctx context.Context, cpuParam *Cpuparam) {
+func CpuResolver(ctx context.Context, cpuParam *Cpuparam) (response *transport.Response) {
 	if cpuParam == nil {
 		logrus.Errorf("cpuParam is nil")
-		return
+		return nil
 	}
 	switch cpuParam.Cmt {
 	case ChaosbladeTypeCPUFullLoad:
-		if err := CpuLoadExec(ctx, cpuParam); err != nil {
-			logrus.Errorf("CpuLoadExec failed", err.Error())
-			return
+		if cpuParam == nil {
+			logrus.Errorf("cpuParam cannot nil")
+			return nil
 		}
+		if cpuParam.CpuPercent != 0 {
+			if cpuParam.CpuPercent > 100 || cpuParam.CpuPercent < 0 {
+				logrus.Errorf("`%d`: cpu-percent is illegal, it must be a positive integer and not bigger than 100", cpuParam.CpuPercent)
+				return nil
+			}
+		}
+		if cpuParam.CpuCount != 0 {
+			if cpuParam.CpuCount <= 0 || cpuParam.CpuCount > runtime.NumCPU() {
+				cpuParam.CpuCount = runtime.NumCPU()
+			}
+		}
+		uid := os.Getpid()
+		start(ctx, cpuParam.CpuCount, cpuParam.CpuPercent)
+		uidStr := strconv.FormatInt(int64(uid), 10)
+		return transport.ReturnSuccessWithResult(uidStr)
 	default:
 	}
-}
-
-func CpuLoadExec(ctx context.Context, cpuParam *Cpuparam) error {
-	if cpuParam == nil {
-		logrus.Errorf("cpuParam cannot nil")
-		return errors.New("cpuParam is nil")
-	}
-
-	if cpuParam.CpuPercent != 0 {
-		if cpuParam.CpuPercent > 100 || cpuParam.CpuPercent < 0 {
-			logrus.Errorf("`%d`: cpu-percent is illegal, it must be a positive integer and not bigger than 100", cpuParam.CpuPercent)
-			return fmt.Errorf("cpuPercent is nil ,%d", cpuParam.CpuPercent)
-		}
-	}
-
-	if cpuParam.CpuCount != 0 {
-		if cpuParam.CpuCount <= 0 || cpuParam.CpuCount > runtime.NumCPU() {
-			cpuParam.CpuCount = runtime.NumCPU()
-		}
-	}
-
-	resp := start(ctx, cpuParam.CpuCount, cpuParam.CpuPercent)
-	if resp.Code == 200 {
-		logrus.Errorf("start response success")
-		return nil
-	}
-	return errors.New("resp not success")
+	return nil
 }
 
 // start burn cpu
 func start(ctx context.Context, cpuCount, cpuPercent int) *spec.Response {
 	ctx = context.WithValue(ctx, "cpuCount", cpuCount)
 	runtime.GOMAXPROCS(cpuCount)
-	log.Debugf(ctx, "cpu counts: %d", cpuCount)
+	logrus.Debugf("cpu counts: %d", cpuCount)
 	slopePercent := float64(cpuPercent)
 	climbTime := 5
 
@@ -137,8 +125,7 @@ func burn(ctx context.Context, quota <-chan int64, slopePercent float64) {
 			if ds < 0 {
 				ds = 0
 			}
-			s, _ = time.ParseDuration(strconv.FormatInt(ds, 10) + "ns")
-			fmt.Println("startTime++++++++++++++++++++++++", time.Now().Second()-t2)
+
 			if (time.Now().Second() - t2) > 5 {
 				fmt.Println("time ending1======", time.Now().Second()-t2)
 				break
@@ -148,7 +135,6 @@ func burn(ctx context.Context, quota <-chan int64, slopePercent float64) {
 			fmt.Println("cpu演练时间结束啦！---------------", times, ok)
 			break
 		default:
-			fmt.Println("default+++++++++++++++++++", s)
 			for time.Now().UnixNano()-startTime < q {
 			}
 			runtime.Gosched()
@@ -159,22 +145,6 @@ func burn(ctx context.Context, quota <-chan int64, slopePercent float64) {
 			}
 		}
 	}
-}
-
-// destroy burn cpu
-func Destroy(uid string) error {
-	// TODO 根据Uid 销毁
-	pid, err := strconv.Atoi(uid)
-	if err != nil {
-		logrus.Errorf("strconv.Atoi failed")
-		return err
-	}
-	if handle, err := os.FindProcess(pid); err == nil {
-		if err := handle.Kill(); err != nil {
-			logrus.Errorf("the cpu process not kill", err.Error())
-		}
-	}
-	return nil
 }
 
 func getUsed(ctx context.Context) float64 {

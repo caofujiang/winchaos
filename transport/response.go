@@ -44,6 +44,7 @@ const (
 	DestroyedExperimentError    = 606
 
 	ScriptFileExecuteWrong = 607
+	CpuExecuteWrong        = 620
 )
 
 var Errors = map[int32]string{
