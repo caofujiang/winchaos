@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/chaosblade-io/chaosblade-spec-go/log"
+	"os"
 	"runtime"
 	"strconv"
 	"time"
 
-	"github.com/chaosblade-io/chaosblade-spec-go/log"
 	"github.com/chaosblade-io/chaosblade-spec-go/spec"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/sirupsen/logrus"
@@ -17,9 +18,8 @@ import (
 type Cpuparam struct {
 	Cbt        ChaosbladeType
 	Cmt        ChaosbladeCPUType
-	UID        string `json:"uid"`
-	CpuCount   int    `json:"cpuCount"`
-	CpuPercent int    `json:"cpuPercent"`
+	CpuCount   int `json:"cpuCount"`
+	CpuPercent int `json:"cpuPercent"`
 }
 
 func CpuResolver(ctx context.Context, cpuParam *Cpuparam) {
@@ -38,10 +38,6 @@ func CpuResolver(ctx context.Context, cpuParam *Cpuparam) {
 }
 
 func CpuLoadExec(ctx context.Context, cpuParam *Cpuparam) error {
-	// TODO destroy
-	//if _, ok := stop(ctx); ok {
-	//return ce.stop(ctx)
-	//}
 	if cpuParam == nil {
 		logrus.Errorf("cpuParam cannot nil")
 		return errors.New("cpuParam is nil")
@@ -74,7 +70,6 @@ func start(ctx context.Context, cpuCount, cpuPercent int) *spec.Response {
 	runtime.GOMAXPROCS(cpuCount)
 	log.Debugf(ctx, "cpu counts: %d", cpuCount)
 	slopePercent := float64(cpuPercent)
-
 	climbTime := 5
 
 	// make CPU slowly climb to some level, to simulate slow resource competition
@@ -115,7 +110,7 @@ func slope(ctx context.Context, cpuPercent int, climbTime int, slopePercent *flo
 
 func getQuota(ctx context.Context, slopePercent float64) int64 {
 	used := getUsed(ctx)
-	log.Debugf(ctx, "cpu usage: %f", used)
+	logrus.Errorf("cpu usage: %f", used)
 	dx := (slopePercent - used) / 100
 	busy := int64(dx * float64(period))
 	return busy
@@ -166,19 +161,26 @@ func burn(ctx context.Context, quota <-chan int64, slopePercent float64) {
 	}
 }
 
-// stop burn cpu
-func stop(ctx context.Context) *spec.Response {
+// destroy burn cpu
+func Destroy(uid string) error {
 	// TODO 根据Uid 销毁
-	//if uid != ""
-	//ctx = context.WithValue(ctx, "bin", BurnCpuBin)
-	//return exec.Destroy(ctx, ce.channel, "cpu fullload")
+	pid, err := strconv.Atoi(uid)
+	if err != nil {
+		logrus.Errorf("strconv.Atoi failed")
+		return err
+	}
+	if handle, err := os.FindProcess(pid); err == nil {
+		if err := handle.Kill(); err != nil {
+			logrus.Errorf("the cpu process not kill", err.Error())
+		}
+	}
 	return nil
 }
 
 func getUsed(ctx context.Context) float64 {
 	totalCpuPercent, err := cpu.Percent(time.Second, false)
 	if err != nil {
-		log.Fatalf(ctx, "get cpu usage fail, %s", err.Error())
+		logrus.Errorf("get cpu usage fail, %s", err.Error())
 	}
 	return totalCpuPercent[0]
 }

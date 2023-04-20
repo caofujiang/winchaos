@@ -40,21 +40,5 @@ func (api *API) Register(transportClient *transport.TransportClient) error {
 		return err
 	}
 
-	// litmus
-	//litmuschaosHandler := NewServerRequestHandler(litmuschaos.NewLitmusChaosHandler(transportClient, k8sInstance))
-	//if err := api.RegisterHandler("litmuschaos", litmuschaosHandler); err != nil {
-	//	return err
-	//}
-	//
-	//installlitmusHandler := NewServerRequestHandler(litmuschaos.NewInstallLitmusHandler(helm))
-	//if err := api.RegisterHandler("installLitmus", installlitmusHandler); err != nil {
-	//	return err
-	//}
-	//
-	//uninstalllitmusHandler := NewServerRequestHandler(litmuschaos.NewUninstallLitmusHandler(helm))
-	//if err := api.RegisterHandler("uninstallLitmus", uninstalllitmusHandler); err != nil {
-	//	return err
-	//}
-
 	return nil
 }

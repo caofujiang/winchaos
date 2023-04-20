@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/chaosblade-io/chaosblade-spec-go v1.7.1
+	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/pkg/errors v0.9.1
 	github.com/satori/go.uuid v1.2.0
 	github.com/shirou/gopsutil v3.21.6+incompatible

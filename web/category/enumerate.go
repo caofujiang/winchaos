@@ -4,11 +4,12 @@ package category
 type ChaosbladeType string
 
 const (
-	ChaosbladeTypeUnknown ChaosbladeType = ""       // Unknown type
-	ChaosbladeTypeCPU     ChaosbladeType = "cpu"    // CPU
-	ChaosbladeTypeIO      ChaosbladeType = "IO"     // IO
-	ChaosbladeTypeMemory  ChaosbladeType = "mem"    // memory
-	ChaosbladeTypeScript  ChaosbladeType = "script" // script
+	ChaosbladeTypeUnknown ChaosbladeType = ""        // Unknown type
+	ChaosbladeTypeCPU     ChaosbladeType = "cpu"     // CPU
+	ChaosbladeTypeIO      ChaosbladeType = "IO"      // IO
+	ChaosbladeTypeMemory  ChaosbladeType = "mem"     // memory
+	ChaosbladeTypeScript  ChaosbladeType = "script"  // script
+	ChaosbladeTypeDestroy ChaosbladeType = "destroy" // script
 )
 
 type ChaosbladeCPUType string

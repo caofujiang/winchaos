@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -44,7 +45,6 @@ func main() {
 
 	// new api
 	api := api2.NewAPI()
-	//err = api.Register(transportClient, k8sInstance, h)
 	err = api.Register(transportClient)
 
 	if err != nil {
@@ -55,7 +55,8 @@ func main() {
 	// listen server
 	go func() {
 		defer tools.PanicPrintStack()
-		err := http.ListenAndServe(":"+options.Opts.Port, nil)
+		err = http.ListenAndServe(":"+options.Opts.Port, nil)
+		fmt.Println("http.ListenAndServe")
 		if err != nil {
 			logrus.Warningln("Start http server failed")
 			handlerErr(err)
@@ -66,15 +67,16 @@ func main() {
 
 	closeClient := closer.NewClientCloseHandler(transportClient)
 	tools.Hold(closeClient)
+
 }
 
-func handlerSuccess() {
-	pid := os.Getpid()
-	err := writePid(pid)
-	if err != nil {
-		logrus.Panic("write pid: ", GetPidFile(), " failed. ", err)
-	}
-}
+//func handlerSuccess() {
+//	pid := os.Getpid()
+//	err := writePid(pid)
+//	if err != nil {
+//		logrus.Panic("write pid: ", GetPidFile(), " failed. ", err)
+//	}
+//}
 
 func handlerErr(err error) {
 	if err == nil {

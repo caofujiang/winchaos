@@ -41,7 +41,6 @@ func (handler *ServerRequestHandler) Handle(request string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-
 		response = handler.Handler.Handle(req)
 	}
 	// encode

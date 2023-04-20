@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/caofujiang/winchaos/web/category"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,6 +16,8 @@ import (
 	"github.com/caofujiang/winchaos/pkg/options"
 	"github.com/caofujiang/winchaos/pkg/tools"
 	"github.com/caofujiang/winchaos/transport"
+	"github.com/caofujiang/winchaos/web/category"
+	"github.com/caofujiang/winchaos/web/cmdexec"
 )
 
 const serviceName = "chaosblade"
@@ -38,7 +39,6 @@ func NewChaosbladeHandler(transportClient *transport.TransportClient) *Chaosblad
 
 func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Response {
 	logrus.Infof("chaosblade: %+v", request)
-
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -51,37 +51,70 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 		logrus.Warningf("cmd is nil", cmd)
 		return transport.ReturnFail(transport.ParameterEmpty, "cmd")
 	}
+
 	// TODO action
-	tp := request.Params["type"] //  script-delay
-	if tp == "" {
-		return transport.ReturnFail(transport.ParameterEmpty, "type")
+
+	cmdType := request.Params["cmd2"] //  eg: script-execute
+	if cmdType == "" {
+		return transport.ReturnFail(transport.ParameterEmpty, "cmd2")
 	}
 
-	val := strings.Split(tp, "-")
-	v := category.ChaosbladeType(val[0])
-	switch v {
+	//val := strings.Split(tp, "-")
+	//v := category.ChaosbladeType(val[0])
+	//switch v {
+	//fmt.Println("request.Params  ", request.Params)
+	cmdVals := strings.Split(cmdType, "-")
+	firstCmd := category.ChaosbladeType(cmdVals[0])
+	subCmd := cmdVals[1]
+	if strings.Contains(cmd, "destroy") {
+		firstCmd = category.ChaosbladeTypeDestroy
+	}
+	switch firstCmd {
+
 	case category.ChaosbladeTypeCPU:
-		v1 := category.ChaosbladeCPUType(val[1])
+		v1 := category.ChaosbladeCPUType(cmdVals[1])
 		cpuCountStr := request.Params["cpuCount"]
 		cpuPercentStr := request.Params["cpuPercent"]
 		cpuCount, _ := strconv.Atoi(cpuCountStr)
 		cpuPercent, _ := strconv.Atoi(cpuPercentStr)
-
-		// TODO get uid
-		uid := request.Params["uid"]
 		param := &category.Cpuparam{
-			Cbt:        v,
+			Cbt:        category.ChaosbladeType(cmdVals[0]),
 			Cmt:        v1,
 			CpuCount:   cpuCount,
 			CpuPercent: cpuPercent,
-			UID:        uid,
 		}
 		category.CpuResolver(ctx, param)
 	case category.ChaosbladeTypeMemory:
 	case category.ChaosbladeTypeScript:
+	case category.ChaosbladeTypeDestroy:
+		//根据uid  从sqlite查询出实验的类型销毁实验
+		cmd := request.Params["cmd"]
+		uid := strings.Split(cmd, " ")[1]
+		return cmdexec.DestroyExperiment(uid)
 	default:
+		fileArgs := request.Params["fileArgs"] //  script-execute
+		fileArgsSlice := make([]string, 0)
+		if fileArgs != "" {
+			fileArgsSlice = strings.Split(fileArgs, ":")
+		}
+		downloadUrl := request.Params["downloadUrl"] //  script-execute
+		if downloadUrl == "" {
+			return transport.ReturnFail(transport.ParameterEmpty, "downloadUrl")
+		}
+		tt := request.Params["timeout"]
+		if tt != "" {
+			//errNumber checks whether timout flag is parsable as Number
+			if _, errNumber := strconv.ParseUint(tt, 10, 64); errNumber != nil {
+				//err checks whether timout flag is parsable as Time
+				if _, err := time.ParseDuration(tt); err != nil {
+					return transport.ReturnFail(transport.ParameterEmpty, err.Error())
+				}
+			}
+		}
+		return new(cmdexec.CreateCommand).Script(subCmd, downloadUrl, fileArgsSlice, tt)
 	}
-	return ch.exec(cmd)
+	logrus.Warningf("chaosblade type error, please check")
+	return transport.ReturnFail(transport.ChaosbladeTypeError, "please check blade type: "+firstCmd)
 }
 
 func (ch *ChaosbladeHandler) exec(cmd string) *transport.Response {
