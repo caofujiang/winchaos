@@ -16,13 +16,14 @@ type Response struct {
 const (
 	OK = 200
 
-	InvalidTimestamp   = 401
-	Forbidden          = 403
-	HandlerNotFound    = 404
-	TokenNotFound      = 405
-	ParameterEmpty     = 406
-	ParameterLess      = 407
-	ParameterTypeError = 408
+	InvalidTimestamp    = 401
+	Forbidden           = 403
+	HandlerNotFound     = 404
+	TokenNotFound       = 405
+	ParameterEmpty      = 406
+	ParameterLess       = 407
+	ParameterTypeError  = 408
+	ChaosbladeTypeError = 409
 
 	ServerError          = 500
 	ServiceNotOpened     = 501
@@ -34,9 +35,15 @@ const (
 	CtlFileNotFound      = 507
 	CtlExecFailed        = 508
 
-	ChaosbladeFileNotFound = 600
-	ResultUnmarshalFailed  = 601
-	Helm3ExecError         = 602
+	ChaosbladeFileNotFound      = 600
+	ResultUnmarshalFailed       = 601
+	Helm3ExecError              = 602
+	ScriptFileFormatWrong       = 603
+	GetCurrentFilePathError     = 604
+	DestroyedExperimentNotFound = 605
+	DestroyedExperimentError    = 606
+
+	ScriptFileExecuteWrong = 607
 )
 
 var Errors = map[int32]string{
@@ -60,9 +67,15 @@ var Errors = map[int32]string{
 	CtlFileNotFound:      "`%s`: ctl file not found",
 	CtlExecFailed:        "exec ctl file failed: %s",
 
-	ChaosbladeFileNotFound: fmt.Sprintf("%s, chaosblade file not found", options.BladeBinPath()),
-	ResultUnmarshalFailed:  "`%s`: exec result unmarshal failed, err: %s",
-	Helm3ExecError:         "helm3 exec error, err: %s",
+	ChaosbladeFileNotFound:  fmt.Sprintf("%s, chaosblade file not found", options.BladeBinPath()),
+	ResultUnmarshalFailed:   "`%s`: exec result unmarshal failed, err: %s",
+	Helm3ExecError:          "helm3 exec error, err: %s",
+	ScriptFileFormatWrong:   "script file format Error %s",
+	GetCurrentFilePathError: "get current path error : %s",
+
+	DestroyedExperimentNotFound: " destroy experiment not found %s",
+	DestroyedExperimentError:    " destroy experiment error %s",
+	ScriptFileExecuteWrong:      " script file execute error %s",
 }
 
 func ReturnFail(errCode int32, args ...interface{}) *Response {

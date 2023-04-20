@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/caofujiang/winchaos/web/category"
+	"github.com/caofujiang/winchaos/web/cmdexec"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -37,32 +39,58 @@ func NewChaosbladeHandler(transportClient *transport.TransportClient) *Chaosblad
 
 func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Response {
 	logrus.Infof("chaosblade: %+v", request)
-
-	//todo 版本不一致时，需要update,这里是判断是否升级完成
-	//if handler.blade.upgrade.NeedWait() {
-	//	return transport.ReturnFail(transport.Code[transport.Upgrading], "agent is in upgrading")
-	//}
 	cmd := request.Params["cmd"]
 	if cmd == "" {
 		return transport.ReturnFail(transport.ParameterEmpty, "cmd")
 	}
-	// TODO
-	tp := request.Params["type"] //  script-delay
-	if tp == "" {
-		return transport.ReturnFail(transport.ParameterEmpty, "type")
+	fmt.Println("request.Params  ", request.Params)
+	cmdType := request.Params["cmd2"] //  eg: script-execute
+	if cmdType == "" {
+		return transport.ReturnFail(transport.ParameterEmpty, "cmd2")
 	}
-	val := strings.Split(tp, "-")
-	v := category.ChaosbladeType(val[0])
-	switch v {
+
+	cmdVals := strings.Split(cmdType, "-")
+	firstCmd := category.ChaosbladeType(cmdVals[0])
+	subCmd := cmdVals[1]
+	if strings.Contains(cmd, "destroy") {
+		firstCmd = category.ChaosbladeTypeDestroy
+	}
+	switch firstCmd {
 	case category.ChaosbladeTypeCPU:
 
 	case category.ChaosbladeTypeMemory:
 
 	case category.ChaosbladeTypeScript:
+		fileArgs := request.Params["fileArgs"] //  script-execute
+		fileArgsSlice := make([]string, 0)
+		if fileArgs != "" {
+			fileArgsSlice = strings.Split(fileArgs, ":")
+		}
+		downloadUrl := request.Params["downloadUrl"] //  script-execute
+		if downloadUrl == "" {
+			return transport.ReturnFail(transport.ParameterEmpty, "downloadUrl")
+		}
+		tt := request.Params["timeout"]
+		if tt != "" {
+			//errNumber checks whether timout flag is parsable as Number
+			if _, errNumber := strconv.ParseUint(tt, 10, 64); errNumber != nil {
+				//err checks whether timout flag is parsable as Time
+				if _, err := time.ParseDuration(tt); err != nil {
+					return transport.ReturnFail(transport.ParameterEmpty, err.Error())
+				}
+			}
+		}
+		return new(cmdexec.CreateCommand).Script(subCmd, downloadUrl, fileArgsSlice, tt)
 
-	default:
+	case category.ChaosbladeTypeDestroy:
+		//根据uid  从sqlite查询出实验的类型销毁实验
+		cmd := request.Params["cmd"]
+		uid := strings.Split(cmd, " ")[1]
+		return cmdexec.DestroyExperiment(uid)
+
 	}
-	return ch.exec(cmd)
+	logrus.Warningf("chaosblade type error, please check")
+	return transport.ReturnFail(transport.ChaosbladeTypeError, "please check blade type: "+firstCmd)
 }
 
 func (ch *ChaosbladeHandler) exec(cmd string) *transport.Response {

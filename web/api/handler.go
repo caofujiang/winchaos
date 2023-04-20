@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-
 	"github.com/sirupsen/logrus"
 
 	"github.com/caofujiang/winchaos/transport"
@@ -42,7 +41,6 @@ func (handler *ServerRequestHandler) Handle(request string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-
 		response = handler.Handler.Handle(req)
 	}
 	// encode
