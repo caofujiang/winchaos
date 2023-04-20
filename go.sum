@@ -1,6 +1,8 @@
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/toml v1.2.1 h1:9F2/+DoOYIOksmaJFPw1tGFy1eDnIJXg+UHjuD8lTak=
 github.com/BurntSushi/toml v1.2.1/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
+github.com/KeKe-Li/log v0.0.0-20220106013756-b7732f599735 h1:W3fzUIXme6XlALOWk9xoEmsgfnKj4tZ7lfAQ+/xfk9M=
+github.com/KeKe-Li/log v0.0.0-20220106013756-b7732f599735/go.mod h1:3zUfhwwuDEIx/05nvCAlHkopiEv1muLZ5JJnBqbDK84=
 github.com/StackExchange/wmi v1.2.1 h1:VIkavFPXSjcnS+O8yTq7NI32k0R5Aj+v39y29VYDOSA=
 github.com/StackExchange/wmi v1.2.1/go.mod h1:rcmrprowKIVzvc+NUiLncP2uuArMWLCbu9SBzvHz7e8=
 github.com/chaosblade-io/chaosblade-spec-go v1.7.1 h1:6umonDJj6UW0WjKy9DnWQMe4kdFHdgAIzlLSlSucpFA=

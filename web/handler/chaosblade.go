@@ -9,8 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/caofujiang/winchaos/conn/asyncreport"
 	"github.com/caofujiang/winchaos/pkg/bash"
 	"github.com/caofujiang/winchaos/pkg/options"
@@ -18,6 +16,7 @@ import (
 	"github.com/caofujiang/winchaos/transport"
 	"github.com/caofujiang/winchaos/web/category"
 	"github.com/caofujiang/winchaos/web/cmdexec"
+	"github.com/sirupsen/logrus"
 )
 
 const serviceName = "chaosblade"
@@ -39,30 +38,21 @@ func NewChaosbladeHandler(transportClient *transport.TransportClient) *Chaosblad
 
 func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Response {
 	logrus.Infof("chaosblade: %+v", request)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	//todo 版本不一致时，需要update,这里是判断是否升级完成
 	//if handler.blade.upgrade.NeedWait() {
 	//	return transport.ReturnFail(transport.Code[transport.Upgrading], "agent is in upgrading")
 	//}
+
 	cmd := request.Params["cmd"]
 	if cmd == "" {
 		logrus.Warningf("cmd is nil", cmd)
 		return transport.ReturnFail(transport.ParameterEmpty, "cmd")
 	}
-
 	// TODO action
-
 	cmdType := request.Params["cmd2"] //  eg: script-execute
 	if cmdType == "" {
 		return transport.ReturnFail(transport.ParameterEmpty, "cmd2")
 	}
-
-	//val := strings.Split(tp, "-")
-	//v := category.ChaosbladeType(val[0])
-	//switch v {
-	//fmt.Println("request.Params  ", request.Params)
 	cmdVals := strings.Split(cmdType, "-")
 	firstCmd := category.ChaosbladeType(cmdVals[0])
 	subCmd := cmdVals[1]
@@ -70,28 +60,30 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 		firstCmd = category.ChaosbladeTypeDestroy
 	}
 	switch firstCmd {
-
 	case category.ChaosbladeTypeCPU:
 		v1 := category.ChaosbladeCPUType(cmdVals[1])
 		cpuCountStr := request.Params["cpuCount"]
+		if cpuCountStr == "" {
+			return transport.ReturnFail(transport.ParameterEmpty, "cpuCount")
+		}
 		cpuPercentStr := request.Params["cpuPercent"]
+		if cpuPercentStr == "" {
+			return transport.ReturnFail(transport.ParameterEmpty, "cpuPercent")
+		}
+		timeoutStr := request.Params["timeOut"]
+
 		cpuCount, _ := strconv.Atoi(cpuCountStr)
 		cpuPercent, _ := strconv.Atoi(cpuPercentStr)
-		param := &category.Cpuparam{
-			Cbt:        category.ChaosbladeType(cmdVals[0]),
+		timeOut, _ := strconv.Atoi(timeoutStr)
+		param := &cmdexec.Cpuparam{
 			Cmt:        v1,
 			CpuCount:   cpuCount,
 			CpuPercent: cpuPercent,
+			TimeOut:    timeOut,
 		}
-		category.CpuResolver(ctx, param)
+		return cmdexec.CpuResolver(param)
 	case category.ChaosbladeTypeMemory:
 	case category.ChaosbladeTypeScript:
-	case category.ChaosbladeTypeDestroy:
-		//根据uid  从sqlite查询出实验的类型销毁实验
-		cmd := request.Params["cmd"]
-		uid := strings.Split(cmd, " ")[1]
-		return cmdexec.DestroyExperiment(uid)
-	default:
 		fileArgs := request.Params["fileArgs"] //  script-execute
 		fileArgsSlice := make([]string, 0)
 		if fileArgs != "" {
@@ -112,6 +104,14 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 			}
 		}
 		return new(cmdexec.CreateCommand).Script(subCmd, downloadUrl, fileArgsSlice, tt)
+
+	case category.ChaosbladeTypeDestroy:
+		//根据uid  从sqlite查询出实验的类型销毁实验
+		cmds := request.Params["cmd"]
+		uid := strings.Split(cmds, " ")
+		return cmdexec.DestroyExperiment(uid[1])
+	default:
+
 	}
 	logrus.Warningf("chaosblade type error, please check")
 	return transport.ReturnFail(transport.ChaosbladeTypeError, "please check blade type: "+firstCmd)

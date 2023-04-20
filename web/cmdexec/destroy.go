@@ -2,10 +2,12 @@ package cmdexec
 
 import (
 	"fmt"
+	"os"
+	"strconv"
+
 	"github.com/caofujiang/winchaos/transport"
 	"github.com/caofujiang/winchaos/web/category"
 	"github.com/sirupsen/logrus"
-	"os"
 )
 
 type DestroyCommand struct {
@@ -22,14 +24,12 @@ func DestroyExperiment(uid string) (response *transport.Response) {
 		return transport.ReturnSuccessWithResult("Experiment already destroyed")
 	}
 	cmdType := category.ChaosbladeType(experimentModel.CmdType)
-	cmdType = "script"
 	switch cmdType {
 	case category.ChaosbladeTypeCPU:
-		if err := category.Destroy(uid); err != nil {
+		if err := CPUDestroy(uid); err != nil {
 			logrus.Warningf("destroy  the cpu error : %s ", err.Error())
 			return transport.ReturnFail(transport.DestroyedExperimentError, err.Error())
 		}
-		return transport.ReturnSuccess()
 	case category.ChaosbladeTypeMemory:
 
 	case category.ChaosbladeTypeScript:
@@ -44,4 +44,20 @@ func DestroyExperiment(uid string) (response *transport.Response) {
 	}
 	checkError(GetDS().UpdateExperimentModelByUid(uid, Destroyed, ""))
 	return transport.ReturnSuccess()
+}
+
+// destroy burn cpu
+func CPUDestroy(uid string) error {
+	// TODO 根据Uid 销毁
+	pid, err := strconv.Atoi(uid)
+	if err != nil {
+		logrus.Errorf("strconv.Atoi failed")
+		return err
+	}
+	if handle, err := os.FindProcess(pid); err == nil {
+		if err := handle.Kill(); err != nil {
+			logrus.Errorf("the cpu process not kill", err.Error())
+		}
+	}
+	return nil
 }

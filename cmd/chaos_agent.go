@@ -63,11 +63,10 @@ func main() {
 		}
 	}()
 
-	//handlerSuccess()
+	tools.Wait()
 
 	closeClient := closer.NewClientCloseHandler(transportClient)
 	tools.Hold(closeClient)
-
 }
 
 //func handlerSuccess() {
