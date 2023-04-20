@@ -177,7 +177,7 @@ func (o *Options) AddFlags() {
 
 	o.Flags.DurationVar(&o.HeartbeatConfig.Period, "heartbeat.period", 5*time.Second, "the period of heartbeat")
 
-	o.Flags.StringVar(&o.TransportConfig.Endpoint, "transport.endpoint", "10.148.55.113:19527", "the server endpoint, ip:port")
+	o.Flags.StringVar(&o.TransportConfig.Endpoint, "transport.endpoint", "192.168.123.93", "the server endpoint, ip:port")
 	o.Flags.DurationVar(&o.TransportConfig.Timeout, "transport.timeout", 3*time.Second, "connect timeout with server")
 	o.Flags.BoolVar(&o.TransportConfig.Secure, "transport.secure", true, "transport in secure or not, default value is true")
 

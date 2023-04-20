@@ -17,8 +17,9 @@ import (
 type Cpuparam struct {
 	Cbt        ChaosbladeType
 	Cmt        ChaosbladeCPUType
-	CpuCount   int `json:"cpuCount"`
-	CpuPercent int `json:"cpuPercent"`
+	UID        string `json:"uid"`
+	CpuCount   int    `json:"cpuCount"`
+	CpuPercent int    `json:"cpuPercent"`
 }
 
 func CpuResolver(ctx context.Context, cpuParam *Cpuparam) {
@@ -38,9 +39,9 @@ func CpuResolver(ctx context.Context, cpuParam *Cpuparam) {
 
 func CpuLoadExec(ctx context.Context, cpuParam *Cpuparam) error {
 	// TODO destroy
-	if _, ok := spec.IsDestroy(ctx); ok {
-		//return ce.stop(ctx)
-	}
+	//if _, ok := stop(ctx); ok {
+	//return ce.stop(ctx)
+	//}
 	if cpuParam == nil {
 		logrus.Errorf("cpuParam cannot nil")
 		return errors.New("cpuParam is nil")
@@ -114,7 +115,7 @@ func slope(ctx context.Context, cpuPercent int, climbTime int, slopePercent *flo
 
 func getQuota(ctx context.Context, slopePercent float64) int64 {
 	used := getUsed(ctx)
-	log.Debugf(ctx, "cpu usage: %f", used, )
+	log.Debugf(ctx, "cpu usage: %f", used)
 	dx := (slopePercent - used) / 100
 	busy := int64(dx * float64(period))
 	return busy
@@ -167,6 +168,8 @@ func burn(ctx context.Context, quota <-chan int64, slopePercent float64) {
 
 // stop burn cpu
 func stop(ctx context.Context) *spec.Response {
+	// TODO 根据Uid 销毁
+	//if uid != ""
 	//ctx = context.WithValue(ctx, "bin", BurnCpuBin)
 	//return exec.Destroy(ctx, ce.channel, "cpu fullload")
 	return nil

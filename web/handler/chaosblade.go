@@ -66,11 +66,15 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 		cpuPercentStr := request.Params["cpuPercent"]
 		cpuCount, _ := strconv.Atoi(cpuCountStr)
 		cpuPercent, _ := strconv.Atoi(cpuPercentStr)
+
+		// TODO get uid
+		uid := request.Params["uid"]
 		param := &category.Cpuparam{
 			Cbt:        v,
 			Cmt:        v1,
 			CpuCount:   cpuCount,
 			CpuPercent: cpuPercent,
+			UID:        uid,
 		}
 		category.CpuResolver(ctx, param)
 	case category.ChaosbladeTypeMemory:
@@ -373,6 +377,7 @@ func isRevokeOperation(command string) bool {
 	}
 	return false
 }
+
 func isAsyncCreate(cmd string) bool {
 	cmds := strings.Fields(cmd)
 	if _, ok := options.CreateOperation[cmds[0]]; !ok {
