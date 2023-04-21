@@ -80,10 +80,13 @@ func (ch *CreateCommand) execScript(downloadUrl string, args []string, timeout s
 	if surfix == ".bat" {
 		cmd = exec.Command("cmd.exe", "/C", filePath, argsStr)
 	} else if surfix == ".ps1" {
-		fileParams := make([]string, 0)
-		fileParams = append(fileParams, filePath)
-		fileParams = append(fileParams, args...)
-		cmd = exec.Command("powershell.exe", fileParams...)
+		// PowerShell 命令和参数
+		cmdArgs := []string{
+			"-ExecutionPolicy", "RemoteSigned",
+			"-File", filePath,
+		}
+		cmdArgs = append(cmdArgs, args...)
+		cmd = exec.Command("powershell.exe", cmdArgs...)
 	} else {
 		logrus.Warningf("file : %s  , format is wrong,please check !", filePath)
 		return "", errors.New(filePath + " : format is wrong!")
