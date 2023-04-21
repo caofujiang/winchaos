@@ -83,6 +83,24 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 		}
 		return cmdexec.CpuResolver(param)
 	case category.ChaosbladeTypeMemory:
+		v1 := category.ChaosbladeMemoryType(cmdVals[1])
+		memPercentStr := request.Params["memPercent"]
+		if memPercentStr == "" {
+			return transport.ReturnFail(transport.ParameterEmpty, "memPercent")
+		}
+		modeStr := request.Params["mode"]
+		if modeStr == "" {
+			return transport.ReturnFail(transport.ParameterEmpty, "modeStr")
+		}
+		timeoutStr := request.Params["timeOut"]
+		timeOut, _ := strconv.Atoi(timeoutStr)
+		param := &cmdexec.MemParam{
+			Cmt:        v1,
+			Mode:       modeStr,
+			MemPercent: memPercentStr,
+			TimeOut:    timeOut,
+		}
+		return cmdexec.MemResolver(param)
 	case category.ChaosbladeTypeScript:
 		fileArgs := request.Params["fileArgs"] //  script-execute
 		fileArgsSlice := make([]string, 0)
@@ -104,7 +122,6 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 			}
 		}
 		return new(cmdexec.CreateCommand).Script(subCmd, downloadUrl, fileArgsSlice, tt)
-
 	case category.ChaosbladeTypeDestroy:
 		//根据uid  从sqlite查询出实验的类型销毁实验
 		cmds := request.Params["cmd"]

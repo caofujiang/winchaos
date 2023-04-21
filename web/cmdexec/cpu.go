@@ -31,10 +31,6 @@ func CpuResolver(cpuParam *Cpuparam) (response *transport.Response) {
 	}
 	switch cpuParam.Cmt {
 	case category.ChaosbladeTypeCPUFullLoad:
-		if cpuParam == nil {
-			logrus.Errorf("cpuParam cannot nil")
-			return nil
-		}
 		if cpuParam.CpuPercent != 0 {
 			if cpuParam.CpuPercent > 100 || cpuParam.CpuPercent < 0 {
 				logrus.Errorf("`%d`: cpu-percent is illegal, it must be a positive integer and not bigger than 100", cpuParam.CpuPercent)
@@ -163,16 +159,16 @@ func burn(ctx context.Context, quota <-chan int64, slopePercent float64) {
 			}
 
 			if (time.Now().Second() - t2) > 5 {
-				//logrus.Info("cpu-ending", time.Now().Second()-t2)
+				logrus.Info("cpu-ending", time.Now().Second()-t2)
 				fmt.Println("cpu-ending", time.Now().Second()-t2)
 				return
 			}
 		case <-ctx.Done():
 			times, ok := ctx.Deadline()
-			//logrus.Info("cpu演练时间结束啦", times, ok)
 			uid := os.Getpid()
 			uidStr := strconv.FormatInt(int64(uid), 10)
 			checkError(GetDS().UpdateExperimentModelByUid(uidStr, Success, ""))
+			logrus.Info("cpu演练时间结束啦", times, ok)
 			fmt.Println("cpu演练时间结束啦", times, ok, time.Now().Second()-t2)
 			return
 		default:
