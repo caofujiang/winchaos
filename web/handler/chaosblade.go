@@ -45,7 +45,7 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 
 	cmd := request.Params["cmd"]
 	if cmd == "" {
-		logrus.Warningf("cmd is nil", cmd)
+		logrus.Warningf("param cmd is nil", cmd)
 		return transport.ReturnFail(transport.ParameterEmpty, "cmd")
 	}
 	// TODO action
@@ -55,24 +55,28 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 	}
 	cmdVals := strings.Split(cmdType, "-")
 	firstCmd := category.ChaosbladeType(cmdVals[0])
-	subCmd := cmdVals[1]
+
 	if strings.Contains(cmd, "destroy") {
 		firstCmd = category.ChaosbladeTypeDestroy
 	}
 	switch firstCmd {
 	case category.ChaosbladeTypeCPU:
 		v1 := category.ChaosbladeCPUType(cmdVals[1])
-		cpuCountStr := request.Params["cpuCount"]
+		cpuCountStr := request.Params["cpu-count"]
 		if cpuCountStr == "" {
-			return transport.ReturnFail(transport.ParameterEmpty, "cpuCount")
+			return transport.ReturnFail(transport.ParameterEmpty, "cpu-count")
 		}
-		cpuPercentStr := request.Params["cpuPercent"]
+		cpuPercentStr := request.Params["cpu-percent"]
 		if cpuPercentStr == "" {
-			return transport.ReturnFail(transport.ParameterEmpty, "cpuPercent")
+			return transport.ReturnFail(transport.ParameterEmpty, "cpu-percent")
 		}
 		timeoutStr := request.Params["timeOut"]
 		cpuCount, _ := strconv.Atoi(cpuCountStr)
 		cpuPercent, _ := strconv.Atoi(cpuPercentStr)
+		if cpuPercent > 100 || cpuPercent < 0 {
+			logrus.Errorf("`%s`: cpu-Percent is illegal, it must be a positive integer and not bigger than 100", cpuPercent)
+			return transport.ReturnFail(transport.ParameterEmpty, cpuPercentStr+" is illegal")
+		}
 		timeOut, _ := strconv.Atoi(timeoutStr)
 		param := &cmdexec.Cpuparam{
 			Cmt:        v1,
@@ -83,6 +87,10 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 		return cmdexec.CpuResolver(param)
 	case category.ChaosbladeTypeMemory:
 	case category.ChaosbladeTypeScript:
+		var subCmd string
+		if len(cmdVals) >= 2 {
+			subCmd = cmdVals[1]
+		}
 		fileArgs := request.Params["fileArgs"] //  script-execute
 		fileArgsSlice := make([]string, 0)
 		if fileArgs != "" {
@@ -108,6 +116,22 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 		cmds := request.Params["cmd"]
 		uid := strings.Split(cmds, " ")
 		return cmdexec.DestroyExperiment(uid[1])
+	case category.ChaosbladeTypeStatus: //查询实验数据
+		uid := request.Params["uid"]
+		limit := request.Params["limit"]
+		if limit == "" {
+			limit = "10"
+		}
+		status := request.Params["status"]
+		asc := request.Params["asc"]
+		params := &cmdexec.StatusCommand{
+			CommandType: "status",
+			Uid:         uid,
+			Limit:       limit,
+			Status:      status,
+			Asc:         asc,
+		}
+		return new(cmdexec.StatusCommand).SearchExperiments(params)
 	default:
 
 	}

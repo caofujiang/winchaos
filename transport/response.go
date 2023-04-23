@@ -45,6 +45,9 @@ const (
 
 	ScriptFileExecuteWrong = 607
 	CpuExecuteWrong        = 620
+	CpuExecuteP            = 620
+
+	GetStatusExecuteWrong = 630
 )
 
 var Errors = map[int32]string{
@@ -77,6 +80,7 @@ var Errors = map[int32]string{
 	DestroyedExperimentNotFound: " destroy experiment not found %s",
 	DestroyedExperimentError:    " destroy experiment error %s",
 	ScriptFileExecuteWrong:      " script file execute error %s",
+	GetStatusExecuteWrong:       " get  stauts execute error %s",
 }
 
 func ReturnFail(errCode int32, args ...interface{}) *Response {

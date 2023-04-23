@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/caofujiang/winchaos/data"
+	"github.com/caofujiang/winchaos/pkg/tools"
 	"github.com/caofujiang/winchaos/web/category"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/sirupsen/logrus"
@@ -51,18 +52,22 @@ func main() {
 		CpuCount:   cpuCount,
 		CpuPercent: cpuPercent,
 	}
-
-	if err := start(ctx, param.CpuCount, param.CpuPercent, uid); err != nil {
-		logrus.Errorf("start cpu failed", err.Error())
-		return
-	}
+	tools.Go(context.Background(), func(ctx context.Context) func(ctx context.Context, closing <-chan struct{}) {
+		return func(ctx context.Context, closing <-chan struct{}) {
+			if err := start(ctx, param.CpuCount, param.CpuPercent, uid); err != nil {
+				logrus.Errorf("start cpu failed", err.Error())
+				return
+			}
+		}
+	}(ctx))
+	tools.Wait()
 	return
 }
 
 type Cpuparams struct {
 	Cmt        category.ChaosbladeCPUType
-	CpuCount   int    `json:"cpuCount"`
-	CpuPercent int    `json:"cpuPercent"`
+	CpuCount   int    `json:"cpu-count"`
+	CpuPercent int    `json:"cpu-percent"`
 	TimeOut    int    `json:"timeOut"`
 	PID        string `json:"pid"`
 	UID        string `json:"uid"`
@@ -141,7 +146,7 @@ func burn(ctx context.Context, quota <-chan int64, slopePercent float64, uid str
 		case <-ctx.Done():
 			checkError(GetDS().UpdateExperimentModelByUid(uid, Success, ""))
 			logrus.Info("cpu-burn-done", uid)
-			return
+			os.Exit(0)
 		default:
 			for time.Now().UnixNano()-startTime < q {
 			}

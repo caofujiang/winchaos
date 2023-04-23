@@ -17,8 +17,8 @@ import (
 
 type Cpuparam struct {
 	Cmt        category.ChaosbladeCPUType
-	CpuCount   int    `json:"cpuCount"`
-	CpuPercent int    `json:"cpuPercent"`
+	CpuCount   int    `json:"cpu-count"`
+	CpuPercent int    `json:"cpu-percent"`
 	TimeOut    int    `json:"timeOut"`
 	PID        string `json:"pid"`
 }
@@ -26,20 +26,22 @@ type Cpuparam struct {
 func CpuResolver(cpuParam *Cpuparam) (response *transport.Response) {
 	if cpuParam == nil {
 		logrus.Errorf("cpuParam is nil")
-		return nil
+		return transport.ReturnFail(transport.ParameterTypeError, cpuParam)
 	}
 	switch cpuParam.Cmt {
 	case category.ChaosbladeTypeCPUFullLoad:
 		if cpuParam.CpuPercent != 0 {
 			if cpuParam.CpuPercent > 100 || cpuParam.CpuPercent < 0 {
 				logrus.Errorf("`%d`: cpu-percent is illegal, it must be a positive integer and not bigger than 100", cpuParam.CpuPercent)
-				return nil
+				return transport.ReturnFail(transport.ParameterTypeError, cpuParam.CpuPercent)
 			}
 		}
 		if cpuParam.CpuCount != 0 {
 			if cpuParam.CpuCount <= 0 || cpuParam.CpuCount > runtime.NumCPU() {
 				cpuParam.CpuCount = runtime.NumCPU()
 			}
+		} else {
+			cpuParam.CpuCount = 1
 		}
 
 		var timeout time.Duration
@@ -55,7 +57,7 @@ func CpuResolver(cpuParam *Cpuparam) (response *transport.Response) {
 		uid, err := cpuParam.generateUid()
 		if err != nil {
 			logrus.Errorf("cpuParam.generateUid-failed", err.Error())
-			return nil
+			return transport.ReturnFail(transport.ParameterTypeError, err.Error())
 		}
 
 		tools.Go(context.Background(), func(ctx context.Context) func(ctx context.Context, closing <-chan struct{}) {
@@ -78,7 +80,7 @@ func CpuResolver(cpuParam *Cpuparam) (response *transport.Response) {
 		return transport.ReturnSuccessWithResult(uid)
 	default:
 	}
-	return nil
+	return response
 }
 
 func (cpm *Cpuparam) generateUid() (string, error) {

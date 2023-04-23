@@ -9,7 +9,8 @@ const (
 	ChaosbladeTypeIO      ChaosbladeType = "IO"      // IO
 	ChaosbladeTypeMemory  ChaosbladeType = "mem"     // memory
 	ChaosbladeTypeScript  ChaosbladeType = "script"  // script
-	ChaosbladeTypeDestroy ChaosbladeType = "destroy" // script
+	ChaosbladeTypeDestroy ChaosbladeType = "destroy" // destroy
+	ChaosbladeTypeStatus  ChaosbladeType = "status"  // search
 )
 
 type ChaosbladeCPUType string
