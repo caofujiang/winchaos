@@ -35,13 +35,12 @@ func CpuResolver(cpuParam *Cpuparam) (response *transport.Response) {
 				logrus.Errorf("`%d`: cpu-percent is illegal, it must be a positive integer and not bigger than 100", cpuParam.CpuPercent)
 				return transport.ReturnFail(transport.ParameterTypeError, cpuParam.CpuPercent)
 			}
-		}
-		if cpuParam.CpuCount != 0 {
-			if cpuParam.CpuCount <= 0 || cpuParam.CpuCount > runtime.NumCPU() {
-				cpuParam.CpuCount = runtime.NumCPU()
-			}
 		} else {
-			cpuParam.CpuCount = 1
+			cpuParam.CpuPercent = 100
+		}
+
+		if cpuParam.CpuCount <= 0 || cpuParam.CpuCount > runtime.NumCPU() {
+			cpuParam.CpuCount = runtime.NumCPU()
 		}
 
 		var timeout time.Duration

@@ -63,13 +63,7 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 	case category.ChaosbladeTypeCPU:
 		v1 := category.ChaosbladeCPUType(cmdVals[1])
 		cpuCountStr := request.Params["cpu-count"]
-		if cpuCountStr == "" {
-			return transport.ReturnFail(transport.ParameterEmpty, "cpu-count")
-		}
 		cpuPercentStr := request.Params["cpu-percent"]
-		if cpuPercentStr == "" {
-			return transport.ReturnFail(transport.ParameterEmpty, "cpu-percent")
-		}
 		timeoutStr := request.Params["timeOut"]
 		cpuCount, _ := strconv.Atoi(cpuCountStr)
 		cpuPercent, _ := strconv.Atoi(cpuPercentStr)
