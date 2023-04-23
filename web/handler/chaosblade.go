@@ -85,7 +85,7 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 		if len(cmdVals) >= 2 {
 			subCmd = cmdVals[1]
 		}
-		fileArgs := request.Params["fileArgs"] //  script-execute
+		fileArgs := request.Params["file-args"] //  script-execute
 		fileArgsSlice := make([]string, 0)
 		if fileArgs != "" {
 			fileArgsSlice = strings.Split(fileArgs, ":")
