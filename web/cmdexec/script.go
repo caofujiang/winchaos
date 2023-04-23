@@ -25,7 +25,6 @@ type CreateCommand struct {
 
 func (ch *CreateCommand) Script(subCmd, downloadUrl string, args []string, timeout string) (response *transport.Response) {
 	subCmdType := category.ChaosbladeScriptType(subCmd)
-	fmt.Println("subCmd:", subCmd)
 	switch subCmdType {
 	case category.ChaosbladeScriptTypeExecute:
 		uid, err := ch.execScript(downloadUrl, args, timeout)

@@ -38,30 +38,35 @@ func NewChaosbladeHandler(transportClient *transport.TransportClient) *Chaosblad
 
 func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Response {
 	logrus.Infof("chaosblade: %+v", request)
-	//todo 版本不一致时，需要update,这里是判断是否升级完成
-	//if handler.blade.upgrade.NeedWait() {
-	//	return transport.ReturnFail(transport.Code[transport.Upgrading], "agent is in upgrading")
-	//}
-
 	cmd := request.Params["cmd"]
 	if cmd == "" {
 		logrus.Warningf("param cmd is nil", cmd)
 		return transport.ReturnFail(transport.ParameterEmpty, "cmd")
 	}
-	// TODO action
-	cmdType := request.Params["cmd2"] //  eg: script-execute
-	if cmdType == "" {
-		return transport.ReturnFail(transport.ParameterEmpty, "cmd2")
-	}
-	cmdVals := strings.Split(cmdType, "-")
-	firstCmd := category.ChaosbladeType(cmdVals[0])
 
+	var firstCmd category.ChaosbladeType
 	if strings.Contains(cmd, "destroy") {
 		firstCmd = category.ChaosbladeTypeDestroy
 	}
+	cmdType := request.Params["cmd2"] //  eg: script-execute
+	cmdVals := make([]string, 0)
+	if cmdType != "" {
+		cmdVals = strings.Split(cmdType, "-")
+		firstCmd = category.ChaosbladeType(cmdVals[0])
+	}
+
+	if firstCmd == "" {
+		return transport.ReturnFail(transport.ParameterEmpty, "cmd2 is empty or parmas is error")
+	}
 	switch firstCmd {
 	case category.ChaosbladeTypeCPU:
-		v1 := category.ChaosbladeCPUType(cmdVals[1])
+		var v1 category.ChaosbladeCPUType
+		if len(cmdVals) >= 2 {
+			v1 = category.ChaosbladeCPUType(cmdVals[1])
+		} else {
+			logrus.Errorf("`%v`: blade CPU type is not  exist", cmdVals)
+			return transport.ReturnFail(transport.ParameterTypeError, cmdVals, "blade CPU type is not  exist ")
+		}
 		cpuCountStr := request.Params["cpu-count"]
 		cpuPercentStr := request.Params["cpu-percent"]
 		timeoutStr := request.Params["timeOut"]
@@ -80,12 +85,27 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 		}
 		return cmdexec.CpuResolver(param)
 	case category.ChaosbladeTypeMemory:
+		v1 := category.ChaosbladeMemoryType(cmdVals[1])
+
+		memPercentStr := request.Params["mem-percent"]
+		modeStr := request.Params["mode"]
+		timeoutStr := request.Params["timeout"]
+		timeOut, _ := strconv.Atoi(timeoutStr)
+
+		memPercent, _ := strconv.Atoi(memPercentStr)
+		param := &cmdexec.MemParam{
+			Cmt:        v1,
+			Mode:       modeStr,
+			MemPercent: memPercent,
+			TimeOut:    timeOut,
+		}
+		return cmdexec.MemResolver(param)
 	case category.ChaosbladeTypeScript:
 		var subCmd string
 		if len(cmdVals) >= 2 {
 			subCmd = cmdVals[1]
 		}
-		fileArgs := request.Params["fileArgs"] //  script-execute
+		fileArgs := request.Params["file-args"] //  script-execute
 		fileArgsSlice := make([]string, 0)
 		if fileArgs != "" {
 			fileArgsSlice = strings.Split(fileArgs, ":")
