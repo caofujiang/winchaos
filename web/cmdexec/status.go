@@ -59,9 +59,6 @@ func (sc *StatusCommand) SearchExperiments(params *StatusCommand) (response *tra
 		} else {
 			asc = false
 		}
-		if params.Status == "" {
-			params.Status = Success
-		}
 		result, err := GetDS().QueryExperimentModels(params.Status, params.Limit, asc)
 		if err != nil {
 			logrus.Errorf("GetDS().QueryExperimentModels  error: %s ", err.Error())

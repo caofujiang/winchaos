@@ -38,30 +38,33 @@ func NewChaosbladeHandler(transportClient *transport.TransportClient) *Chaosblad
 
 func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Response {
 	logrus.Infof("chaosblade: %+v", request)
-	//todo 版本不一致时，需要update,这里是判断是否升级完成
-	//if handler.blade.upgrade.NeedWait() {
-	//	return transport.ReturnFail(transport.Code[transport.Upgrading], "agent is in upgrading")
-	//}
-
 	cmd := request.Params["cmd"]
 	if cmd == "" {
 		logrus.Warningf("param cmd is nil", cmd)
 		return transport.ReturnFail(transport.ParameterEmpty, "cmd")
 	}
-	// TODO action
-	cmdType := request.Params["cmd2"] //  eg: script-execute
-	if cmdType == "" {
-		return transport.ReturnFail(transport.ParameterEmpty, "cmd2")
-	}
-	cmdVals := strings.Split(cmdType, "-")
-	firstCmd := category.ChaosbladeType(cmdVals[0])
-
+	var firstCmd category.ChaosbladeType
 	if strings.Contains(cmd, "destroy") {
 		firstCmd = category.ChaosbladeTypeDestroy
 	}
+	cmdType := request.Params["cmd2"] //  eg: script-execute
+	cmdVals := make([]string, 0)
+	if cmdType != "" {
+		cmdVals = strings.Split(cmdType, "-")
+		firstCmd = category.ChaosbladeType(cmdVals[0])
+	}
+	if firstCmd == "" {
+		return transport.ReturnFail(transport.ParameterEmpty, "cmd2 is empty or parmas is error")
+	}
 	switch firstCmd {
 	case category.ChaosbladeTypeCPU:
-		v1 := category.ChaosbladeCPUType(cmdVals[1])
+		var v1 category.ChaosbladeCPUType
+		if len(cmdVals) >= 2 {
+			v1 = category.ChaosbladeCPUType(cmdVals[1])
+		} else {
+			logrus.Errorf("`%v`: blade CPU type is not  exist", cmdVals)
+			return transport.ReturnFail(transport.ParameterTypeError, cmdVals, "blade CPU type is not  exist ")
+		}
 		cpuCountStr := request.Params["cpu-count"]
 		cpuPercentStr := request.Params["cpu-percent"]
 		timeoutStr := request.Params["timeOut"]
