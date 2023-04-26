@@ -6,6 +6,8 @@
 编译 cpu.exe:
 > CGO_ENABLED=1 GOOS=windows GOARCH=amd64 CC="x86_64-w64-mingw32-gcc" go build -o cpu.exe web/category/cpu/cpu_main.go
 
+> CGO_ENABLED=1 GOOS=windows GOARCH=amd64 CC="x86_64-w64-mingw32-gcc" go build -o mem.exe web/category/mem/mem_main.go
+
 编译 agent.exe:
 > CGO_ENABLED=1 GOOS=windows GOARCH=amd64 CC="x86_64-w64-mingw32-gcc" go build -o agent.exe cmd/chaos_agent.go
 ```

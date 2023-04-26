@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"os/exec"
-	"runtime"
 	"strconv"
 	"time"
 
@@ -15,47 +14,48 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type Cpuparam struct {
-	Cmt        category.ChaosbladeCPUType
-	CpuCount   int    `json:"cpu-count"`
-	CpuPercent int    `json:"cpu-percent"`
+type MemParam struct {
+	Cmt        category.ChaosbladeMemoryType
+	Mode       string `json:"mode"`
+	MemPercent int    `json:"mem-percent"`
 	Timeout    int    `json:"timeout"`
 	PID        string `json:"pid"`
 }
 
-func CpuResolver(cpuParam *Cpuparam) (response *transport.Response) {
-	if cpuParam == nil {
-		logrus.Errorf("cpuParam is nil")
-		return transport.ReturnFail(transport.ParameterTypeError, cpuParam)
+func MemResolver(memParam *MemParam) (response *transport.Response) {
+	if memParam == nil {
+		logrus.Errorf("memParam is nil")
+		return nil
 	}
-	switch cpuParam.Cmt {
-	case category.ChaosbladeTypeCPUFullLoad:
-		if cpuParam.CpuPercent != 0 {
-			if cpuParam.CpuPercent > 100 || cpuParam.CpuPercent < 0 {
-				logrus.Errorf("`%d`: cpu-percent is illegal, it must be a positive integer and not bigger than 100", cpuParam.CpuPercent)
-				return transport.ReturnFail(transport.ParameterTypeError, cpuParam.CpuPercent)
+	switch memParam.Cmt {
+	case category.ChaosbladeMemoryTypeLoad:
+		memPercent := memParam.MemPercent
+		if memPercent != 0 {
+			if memPercent > 100 || memPercent < 0 {
+				logrus.Errorf("`%d`: mem-percent  must be a positive integer and not bigger than 100", memParam.MemPercent)
+				return transport.ReturnFail(transport.ParameterTypeError, memParam.MemPercent)
 			}
 		} else {
-			cpuParam.CpuPercent = 100
+			memPercent = 100
 		}
 
-		if cpuParam.CpuCount <= 0 || cpuParam.CpuCount > runtime.NumCPU() {
-			cpuParam.CpuCount = runtime.NumCPU()
+		if memParam.Mode == "" {
+			memParam.Mode = "ram"
 		}
 
 		var timeout time.Duration
-		if cpuParam.Timeout == 0 {
+		if memParam.Timeout == 0 {
 			// 默认超时
 			timeout = 60 * time.Second
 		} else {
-			timeout = time.Duration(cpuParam.Timeout)
+			timeout = time.Duration(memParam.Timeout)
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 
-		uid, err := cpuParam.generateUid()
+		uid, err := memParam.generateUid()
 		if err != nil {
-			logrus.Errorf("cpuParam.generateUid-failed", err.Error())
+			logrus.Errorf("memParam.generateUid-failed", err.Error())
 			return transport.ReturnFail(transport.ParameterTypeError, err.Error())
 		}
 
@@ -63,11 +63,11 @@ func CpuResolver(cpuParam *Cpuparam) (response *transport.Response) {
 			return func(ctx context.Context, closing <-chan struct{}) {
 				currentPath, err := os.Getwd()
 				if err != nil {
-					logrus.Warningf("os.Getwd error : %s ", err.Error())
+					logrus.Warningf("os.Getwd-mem-error : %s ", err.Error())
 					return
 				}
-				path := currentPath + "/" + "cpu.exe"
-				cmd := exec.Command(path, strconv.Itoa(cpuParam.CpuCount), strconv.Itoa(cpuParam.CpuPercent), uid)
+				path := currentPath + "/" + "mem.exe"
+				cmd := exec.Command(path, memParam.Mode, strconv.Itoa(memPercent), uid)
 				output, err := cmd.Output()
 				if err != nil {
 					logrus.Errorf("cmd.Output-failed", err.Error(), string(output))
@@ -76,13 +76,14 @@ func CpuResolver(cpuParam *Cpuparam) (response *transport.Response) {
 				return
 			}
 		}(ctx))
+
 		return transport.ReturnSuccessWithResult(uid)
 	default:
 	}
 	return transport.ReturnFail(transport.ParameterTypeError)
 }
 
-func (cpm *Cpuparam) generateUid() (string, error) {
+func (mp *MemParam) generateUid() (string, error) {
 	uid, err := util.GenerateUid()
 	if err != nil {
 		return "", err
@@ -94,5 +95,5 @@ func (cpm *Cpuparam) generateUid() (string, error) {
 	if model == nil {
 		return uid, nil
 	}
-	return cpm.generateUid()
+	return mp.generateUid()
 }

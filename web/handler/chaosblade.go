@@ -43,15 +43,21 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 		logrus.Warningf("param cmd is nil", cmd)
 		return transport.ReturnFail(transport.ParameterEmpty, "cmd")
 	}
-	var firstCmd category.ChaosbladeType
+
+	var (
+		firstCmd category.ChaosbladeType
+		cmdType  string
+		cmdVals  []string
+	)
+
 	if strings.Contains(cmd, "destroy") {
 		firstCmd = category.ChaosbladeTypeDestroy
-	}
-	cmdType := request.Params["cmd2"] //  eg: script-execute
-	cmdVals := make([]string, 0)
-	if cmdType != "" {
-		cmdVals = strings.Split(cmdType, "-")
-		firstCmd = category.ChaosbladeType(cmdVals[0])
+	} else {
+		cmdType = request.Params["cmd2"] //  eg: script-execute
+		if cmdType != "" {
+			cmdVals = strings.Split(cmdType, "-")
+			firstCmd = category.ChaosbladeType(cmdVals[0])
+		}
 	}
 	if firstCmd == "" {
 		return transport.ReturnFail(transport.ParameterEmpty, "cmd2 is empty or parmas is error")
@@ -70,19 +76,29 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 		timeoutStr := request.Params["timeOut"]
 		cpuCount, _ := strconv.Atoi(cpuCountStr)
 		cpuPercent, _ := strconv.Atoi(cpuPercentStr)
-		if cpuPercent > 100 || cpuPercent < 0 {
-			logrus.Errorf("`%s`: cpu-Percent is illegal, it must be a positive integer and not bigger than 100", cpuPercent)
-			return transport.ReturnFail(transport.ParameterEmpty, cpuPercentStr+" is illegal")
-		}
 		timeOut, _ := strconv.Atoi(timeoutStr)
 		param := &cmdexec.Cpuparam{
 			Cmt:        v1,
 			CpuCount:   cpuCount,
 			CpuPercent: cpuPercent,
-			TimeOut:    timeOut,
+			Timeout:    timeOut,
 		}
 		return cmdexec.CpuResolver(param)
 	case category.ChaosbladeTypeMemory:
+		v1 := category.ChaosbladeMemoryType(cmdVals[1])
+		memPercentStr := request.Params["mem-percent"]
+		modeStr := request.Params["mode"]
+		timeoutStr := request.Params["timeout"]
+		timeOut, _ := strconv.Atoi(timeoutStr)
+
+		memPercent, _ := strconv.Atoi(memPercentStr)
+		param := &cmdexec.MemParam{
+			Cmt:        v1,
+			Mode:       modeStr,
+			MemPercent: memPercent,
+			Timeout:    timeOut,
+		}
+		return cmdexec.MemResolver(param)
 	case category.ChaosbladeTypeScript:
 		var subCmd string
 		if len(cmdVals) >= 2 {

@@ -33,12 +33,23 @@ func DestroyExperiment(uid string) (response *transport.Response) {
 			return transport.ReturnFail(transport.DestroyedExperimentNotFound, uid, err.Error())
 		}
 
-		if err := CPUDestroy(cpuparam.PID); err != nil {
+		if err := ExperimentDestroy(cpuparam.PID); err != nil {
 			logrus.Warningf("destroy  the cpu error : %s ", err.Error())
 			return transport.ReturnFail(transport.DestroyedExperimentError, err.Error())
 		}
 		logrus.Infof("cpu-destroy-data: %s", uid, experimentModel.Flag)
 	case category.ChaosbladeTypeMemory:
+		var memparam *MemParam
+		if err = json.Unmarshal([]byte(experimentModel.Flag), &memparam); err != nil {
+			logrus.Errorf("json.Unmarshal-failed,error : %s ", err.Error())
+			return transport.ReturnFail(transport.DestroyedExperimentNotFound, uid, err.Error())
+		}
+
+		if err := ExperimentDestroy(memparam.PID); err != nil {
+			logrus.Warningf("destroy  the mem error : %s ", err.Error())
+			return transport.ReturnFail(transport.DestroyedExperimentError, err.Error())
+		}
+		logrus.Infof("mem-destroy-data: %s", uid, experimentModel.Flag)
 	case category.ChaosbladeTypeScript:
 		//清理本地的文件
 		filePath := experimentModel.SubCommand
@@ -53,8 +64,8 @@ func DestroyExperiment(uid string) (response *transport.Response) {
 	return transport.ReturnSuccess()
 }
 
-// destroy burn cpu
-func CPUDestroy(pidstr string) error {
+// ExperimentDestroy burn cpu
+func ExperimentDestroy(pidstr string) error {
 	pid, err := strconv.Atoi(pidstr)
 	if err != nil {
 		logrus.Errorf("strconv.Atoi failed: %v", err)
