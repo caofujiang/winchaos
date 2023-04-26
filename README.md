@@ -110,3 +110,35 @@ curl --location 'http://localhost:19527/chaosblade' \
   {"Code":200,"Success":true,"Error":"","Result":"success"}
 
 ```
+
+#### 5. 执行mem演练接口
+```markdown
+curl --location --request POST 'http://192.168.123.214:19527/chaosblade' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-raw '{
+    "params":{
+        "cmd": "create create mem load --mode ram --mem-percent 50 --timeout 120",
+        "ts": "601366376892",
+        "cmd2": "mem-load",
+        "mode": "cache",
+        "mem-percent": "50",
+        "timeout": "50"
+    }
+}'
+返回：
+{"Code":200,"Success":true,"Error":"","Result":"f820b85136709cb6"}
+```
+
+#### 6.执行destroy演练的接口
+```markdown
+curl --location --request POST 'http://192.168.123.214:19527/chaosblade' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-raw '{
+    "params": 
+      {
+        "cmd":"destroy 23903fa200f9f9b8"
+      }
+}'
+返回：
+{"Code":200,"Success":true,"Error":"","Result":"success"}
+```
