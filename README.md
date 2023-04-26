@@ -42,7 +42,10 @@ curl --location 'http://192.168.123.214:19527/chaosblade' \
 返回：
     {"Code":200,"Success":true,"Error":"","Result":"f79ffd7e00d67694"}
 ``` 
-#### 2、执行.bat和ps1的接口
+#### 2、查询所有实验结果的接口
+
+可以查询所有实验的接口，也可以根据uid查询单个实验接口:
+
 ```
 curl --location 'http://localhost:19527/chaosblade' \
 --header 'Content-Type: application/x-www-form-urlencoded' \
@@ -53,7 +56,7 @@ curl --location 'http://localhost:19527/chaosblade' \
           "cmd2":"status",
           "uid": "1688571c2b9904e1",
           "limit": "5",
-          "status":"",   
+          "status":"",   //Destroyed ,Created,Success,Error
           "asc": "true"
       }
 }'
@@ -111,7 +114,7 @@ curl --location 'http://localhost:19527/chaosblade' \
 
 ```
 
-#### 5. 执行mem演练接口
+#### 5. 执行mem cache演练接口
 ```markdown
 curl --location --request POST 'http://192.168.123.214:19527/chaosblade' \
 --header 'Content-Type: application/x-www-form-urlencoded' \
@@ -129,6 +132,7 @@ curl --location --request POST 'http://192.168.123.214:19527/chaosblade' \
 {"Code":200,"Success":true,"Error":"","Result":"f820b85136709cb6"}
 ```
 
+
 #### 6.执行destroy演练的接口
 ```markdown
 curl --location --request POST 'http://192.168.123.214:19527/chaosblade' \
@@ -142,3 +146,38 @@ curl --location --request POST 'http://192.168.123.214:19527/chaosblade' \
 返回：
 {"Code":200,"Success":true,"Error":"","Result":"success"}
 ```
+
+#### 7. 执行mem ram演练接口
+
+```markdown
+curl --location --request POST 'http://192.168.123.214:19527/chaosblade' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-raw '{
+"params":{
+"cmd": "create create mem load --mode ram --mem-percent 50 --timeout 120",
+"ts": "601366376892",
+"cmd2": "mem-load",
+"mode": "ram",
+"mem-percent": "50",
+"timeout": "50"
+}
+}'
+
+返回：
+{"Code":200,"Success":true,"Error":"","Result":"bf3f3fee5f28f498"}
+```
+
+#### 6.执行destroy ram演练的接口
+```markdown
+curl --location --request POST 'http://192.168.123.214:19527/chaosblade' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-raw '{
+"params":
+{
+"cmd":"destroy bf3f3fee5f28f498"
+}
+}'
+返回：
+{"Code":200,"Success":true,"Error":"","Result":"success"}
+```
+
