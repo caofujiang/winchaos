@@ -68,7 +68,7 @@ type Cpuparams struct {
 	Cmt        category.ChaosbladeCPUType
 	CpuCount   int    `json:"cpu-count"`
 	CpuPercent int    `json:"cpu-percent"`
-	TimeOut    int    `json:"timeOut"`
+	Timeout    int    `json:"timeout"`
 	PID        string `json:"pid"`
 	UID        string `json:"uid"`
 }

@@ -18,7 +18,7 @@ type MemParam struct {
 	Cmt        category.ChaosbladeMemoryType
 	Mode       string `json:"mode"`
 	MemPercent int    `json:"mem-percent"`
-	TimeOut    int    `json:"timeout"`
+	Timeout    int    `json:"timeout"`
 	PID        string `json:"pid"`
 }
 
@@ -44,11 +44,11 @@ func MemResolver(memParam *MemParam) (response *transport.Response) {
 		}
 
 		var timeout time.Duration
-		if memParam.TimeOut == 0 {
+		if memParam.Timeout == 0 {
 			// 默认超时
 			timeout = 60 * time.Second
 		} else {
-			timeout = time.Duration(memParam.TimeOut)
+			timeout = time.Duration(memParam.Timeout)
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()

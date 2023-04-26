@@ -62,7 +62,7 @@ func main() {
 type MemParams struct {
 	Mode       string `json:"mode"`
 	MemPercent int    `json:"mem-percent"`
-	TimeOut    int    `json:"timeout"`
+	Timeout    int    `json:"timeout"`
 	PID        string `json:"pid"`
 	UID        string `json:"uid"`
 }

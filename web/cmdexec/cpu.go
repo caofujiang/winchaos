@@ -19,7 +19,7 @@ type Cpuparam struct {
 	Cmt        category.ChaosbladeCPUType
 	CpuCount   int    `json:"cpu-count"`
 	CpuPercent int    `json:"cpu-percent"`
-	TimeOut    int    `json:"timeout"`
+	Timeout    int    `json:"timeout"`
 	PID        string `json:"pid"`
 }
 
@@ -44,11 +44,11 @@ func CpuResolver(cpuParam *Cpuparam) (response *transport.Response) {
 		}
 
 		var timeout time.Duration
-		if cpuParam.TimeOut == 0 {
+		if cpuParam.Timeout == 0 {
 			// 默认超时
 			timeout = 60 * time.Second
 		} else {
-			timeout = time.Duration(cpuParam.TimeOut)
+			timeout = time.Duration(cpuParam.Timeout)
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
