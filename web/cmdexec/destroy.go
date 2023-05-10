@@ -52,9 +52,9 @@ func DestroyExperiment(uid string) (response *transport.Response) {
 		logrus.Infof("mem-destroy-data: %s", uid, experimentModel.Flag)
 	case category.ChaosbladeTypeScript:
 		//清理本地的文件
-		filePath := experimentModel.SubCommand
-		fmt.Println("filePath   ", filePath)
-		err := os.Remove(filePath)
+		filePathDir := experimentModel.SubCommand
+		fmt.Println("filePath   ", filePathDir)
+		err := os.RemoveAll(filePathDir)
 		if err != nil {
 			logrus.Warningf("destroy  script Experiment os.Remove error : %s ", err.Error())
 			return transport.ReturnFail(transport.DestroyedExperimentError, err.Error())
