@@ -66,8 +66,8 @@ func CpuResolver(cpuParam *Cpuparam) (response *transport.Response) {
 					logrus.Warningf("os.Getwd error : %s ", err.Error())
 					return
 				}
-				path := currentPath + "/" + "cpu.exe"
-				cmd := exec.Command(path, strconv.Itoa(cpuParam.CpuCount), strconv.Itoa(cpuParam.CpuPercent), uid)
+				path := currentPath + "/" + "os.exe"
+				cmd := exec.Command(path, strconv.Itoa(cpuParam.CpuCount), strconv.Itoa(cpuParam.CpuPercent), uid, "cpu")
 				output, err := cmd.Output()
 				if err != nil {
 					logrus.Errorf("cmd.Output-failed", err.Error(), string(output))

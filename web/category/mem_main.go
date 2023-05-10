@@ -1,4 +1,4 @@
-package main
+package category
 
 import (
 	"context"
@@ -15,14 +15,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func main() {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+func MemRun(ctx context.Context, memPercent int, modeStr string, uid string) {
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
-
-	modeStr := os.Args[1]
-	memPercentStr := os.Args[2]
-	uid := os.Args[3]
-	memPercent, _ := strconv.Atoi(memPercentStr)
 	pid := os.Getpid()
 	pidStr := strconv.FormatInt(int64(pid), 10)
 	val := &MemParams{

@@ -1,4 +1,4 @@
-package main
+package category
 
 import (
 	"context"
@@ -11,20 +11,13 @@ import (
 
 	"github.com/caofujiang/winchaos/data"
 	"github.com/caofujiang/winchaos/pkg/tools"
-	"github.com/caofujiang/winchaos/web/category"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/sirupsen/logrus"
 )
 
-func main() {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+func CpuRun(ctx context.Context, cpuCount int, cpuPercent int, uid string) {
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
-	// blade create cpu load --cpu-percent 60 --cpu-count 2
-	cpuCountStr := os.Args[1]
-	cpuPercentStr := os.Args[2]
-	uid := os.Args[3]
-	cpuCount, _ := strconv.Atoi(cpuCountStr)
-	cpuPercent, _ := strconv.Atoi(cpuPercentStr)
 	pid := os.Getpid()
 	pidStr := strconv.FormatInt(int64(pid), 10)
 	val := &Cpuparams{
@@ -54,18 +47,17 @@ func main() {
 	}
 	tools.Go(context.Background(), func(ctx context.Context) func(ctx context.Context, closing <-chan struct{}) {
 		return func(ctx context.Context, closing <-chan struct{}) {
-			if err := start(ctx, param.CpuCount, param.CpuPercent, uid); err != nil {
+			if err := CpuStart(ctx, param.CpuCount, param.CpuPercent, uid); err != nil {
 				logrus.Errorf("start cpu failed", err.Error())
 				return
 			}
 		}
 	}(ctx))
-	tools.Wait()
 	return
 }
 
 type Cpuparams struct {
-	Cmt        category.ChaosbladeCPUType
+	Cmt        ChaosbladeCPUType
 	CpuCount   int    `json:"cpu-count"`
 	CpuPercent int    `json:"cpu-percent"`
 	Timeout    int    `json:"timeout"`
@@ -73,8 +65,8 @@ type Cpuparams struct {
 	UID        string `json:"uid"`
 }
 
-// start burn cpu
-func start(ctx context.Context, cpuCount, cpuPercent int, uid string) error {
+// CpuStart burn cpu
+func CpuStart(ctx context.Context, cpuCount, cpuPercent int, uid string) error {
 	ctx = context.WithValue(ctx, "cpuCount", cpuCount)
 	runtime.GOMAXPROCS(cpuCount)
 	logrus.Debugf("cpu counts: %d", cpuCount)

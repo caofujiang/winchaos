@@ -66,8 +66,8 @@ func MemResolver(memParam *MemParam) (response *transport.Response) {
 					logrus.Warningf("os.Getwd-mem-error : %s ", err.Error())
 					return
 				}
-				path := currentPath + "/" + "mem.exe"
-				cmd := exec.Command(path, memParam.Mode, strconv.Itoa(memPercent), uid)
+				path := currentPath + "/" + "os.exe"
+				cmd := exec.Command(path, memParam.Mode, strconv.Itoa(memPercent), uid, "mem")
 				output, err := cmd.Output()
 				if err != nil {
 					logrus.Errorf("cmd.Output-failed", err.Error(), string(output))
