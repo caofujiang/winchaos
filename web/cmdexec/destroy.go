@@ -21,6 +21,10 @@ func DestroyExperiment(uid string) (response *transport.Response) {
 		logrus.Warningf("GetDS().QueryExperimentModelByUid,error : %s ", err.Error())
 		return transport.ReturnFail(transport.DestroyedExperimentNotFound, uid, err.Error())
 	}
+	if experimentModel == nil {
+		logrus.Warningf("GetDS().QueryExperimentModelByUid-experimentModel-is-nil")
+		return transport.ReturnFail(transport.DestroyedExperimentNotFound, uid, err.Error())
+	}
 	if experimentModel.Status == Destroyed {
 		return transport.ReturnSuccessWithResult("Experiment already destroyed")
 	}

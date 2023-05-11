@@ -13,11 +13,13 @@ import (
 )
 
 func main() {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
-
 	eventType := os.Args[4]
 	eventCategory := category.ChaosbladeType(eventType)
+
+	timeoutStr := os.Args[5]
+	timeout, _ := strconv.Atoi(timeoutStr)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+	defer cancel()
 	switch eventCategory {
 	case category.ChaosbladeTypeCPU:
 		// blade create cpu load --cpu-percent 60 --cpu-count 2
@@ -26,13 +28,13 @@ func main() {
 		uid := os.Args[3]
 		cpuCount, _ := strconv.Atoi(cpuCountStr)
 		cpuPercent, _ := strconv.Atoi(cpuPercentStr)
-		category.CpuRun(ctx, cpuCount, cpuPercent, uid)
+		category.CpuRun(ctx, cpuCount, cpuPercent, uid, timeout)
 	case category.ChaosbladeTypeMemory:
 		modeStr := os.Args[1]
 		memPercentStr := os.Args[2]
 		uid := os.Args[3]
 		memPercent, _ := strconv.Atoi(memPercentStr)
-		category.MemRun(ctx, memPercent, modeStr, uid)
+		category.MemRun(ctx, memPercent, modeStr, uid, timeout)
 	default:
 		logrus.Errorf("not expect eventCategory", eventCategory)
 		return

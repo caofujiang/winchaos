@@ -43,14 +43,14 @@ func CpuResolver(cpuParam *Cpuparam) (response *transport.Response) {
 			cpuParam.CpuCount = runtime.NumCPU()
 		}
 
-		var timeout time.Duration
+		var timeout int
 		if cpuParam.Timeout == 0 {
 			// 默认超时
-			timeout = 60 * time.Second
+			timeout = 60
 		} else {
-			timeout = time.Duration(cpuParam.Timeout)
+			timeout = cpuParam.Timeout
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 		defer cancel()
 
 		uid, err := cpuParam.generateUid()
@@ -67,7 +67,7 @@ func CpuResolver(cpuParam *Cpuparam) (response *transport.Response) {
 					return
 				}
 				path := currentPath + "/" + "os.exe"
-				cmd := exec.Command(path, strconv.Itoa(cpuParam.CpuCount), strconv.Itoa(cpuParam.CpuPercent), uid, "cpu")
+				cmd := exec.Command(path, strconv.Itoa(cpuParam.CpuCount), strconv.Itoa(cpuParam.CpuPercent), uid, "cpu", strconv.Itoa(timeout))
 				output, err := cmd.Output()
 				if err != nil {
 					logrus.Errorf("cmd.Output-failed", err.Error(), string(output))

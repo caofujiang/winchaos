@@ -15,9 +15,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func MemRun(ctx context.Context, memPercent int, modeStr string, uid string) {
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+func MemRun(ctx context.Context, memPercent int, modeStr string, uid string, timeout int) {
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
 	defer cancel()
+
 	pid := os.Getpid()
 	pidStr := strconv.FormatInt(int64(pid), 10)
 	val := &MemParams{
@@ -26,6 +27,15 @@ func MemRun(ctx context.Context, memPercent int, modeStr string, uid string) {
 		PID:        pidStr,
 		UID:        uid,
 	}
+	time.AfterFunc(time.Duration(timeout)*time.Second, func() {
+		if handle, err := os.FindProcess(pid); err == nil {
+			checkMemError(GetMemDS().UpdateExperimentModelByUid(uid, SuccessMem, ""))
+			if err := handle.Kill(); err != nil {
+				logrus.Errorf("the cpu process not kill: %v", err)
+				return
+			}
+		}
+	})
 
 	result, err := json.Marshal(val)
 	if err != nil {
@@ -78,7 +88,7 @@ func starts(ctx context.Context, memPercent, memReserve, memRate int, burnMemMod
 		select {
 		case <-ctx.Done():
 			checkMemError(GetMemDS().UpdateExperimentModelByUid(uid, SuccessMem, ""))
-			logrus.Info("cpu-burn-done", uid)
+			logrus.Info("mem-burn-done", uid)
 			os.Exit(0)
 		case <-ticker.C:
 			_, expectMem, err := calculateMemSize(ctx, burnMemMode, memPercent, memReserve, includeBufferCache)

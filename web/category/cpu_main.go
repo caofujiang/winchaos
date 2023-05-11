@@ -15,9 +15,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func CpuRun(ctx context.Context, cpuCount int, cpuPercent int, uid string) {
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+func CpuRun(ctx context.Context, cpuCount int, cpuPercent int, uid string, timeout int) {
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
 	defer cancel()
+
 	pid := os.Getpid()
 	pidStr := strconv.FormatInt(int64(pid), 10)
 	val := &Cpuparams{

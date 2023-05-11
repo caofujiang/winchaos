@@ -43,14 +43,14 @@ func MemResolver(memParam *MemParam) (response *transport.Response) {
 			memParam.Mode = "ram"
 		}
 
-		var timeout time.Duration
+		var timeout int
 		if memParam.Timeout == 0 {
 			// 默认超时
-			timeout = 60 * time.Second
+			timeout = 60
 		} else {
-			timeout = time.Duration(memParam.Timeout)
+			timeout = memParam.Timeout
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 		defer cancel()
 
 		uid, err := memParam.generateUid()
@@ -67,7 +67,7 @@ func MemResolver(memParam *MemParam) (response *transport.Response) {
 					return
 				}
 				path := currentPath + "/" + "os.exe"
-				cmd := exec.Command(path, memParam.Mode, strconv.Itoa(memPercent), uid, "mem")
+				cmd := exec.Command(path, memParam.Mode, strconv.Itoa(memPercent), uid, "mem", strconv.Itoa(timeout))
 				output, err := cmd.Output()
 				if err != nil {
 					logrus.Errorf("cmd.Output-failed", err.Error(), string(output))
