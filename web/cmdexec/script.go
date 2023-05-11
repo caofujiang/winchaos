@@ -47,7 +47,7 @@ func (ch *CreateCommand) Script(subCmd, downloadUrl string, args []string, timeo
 func (ch *CreateCommand) execScript(downloadUrl string, args []string, timeout string) (uid string, err error) {
 	currentPath, err := os.Getwd()
 	if err != nil {
-		logrus.Warningf("os.Getwd error : %s ", err.Error())
+		logrus.Errorf("os.Getwd error : %s ", err.Error())
 		return "", err
 	}
 	scriptFileName := path.Base(downloadUrl)
@@ -57,8 +57,6 @@ func (ch *CreateCommand) execScript(downloadUrl string, args []string, timeout s
 		logrus.Errorf("create tar FilePath Directory  failed : %s ", err.Error())
 		return "", err
 	}
-	//downloadUrl = "http://192.168.123.93:8080/chaosblade-cps/script/download/custom/host-echo4_param-1682503356363.tar"
-
 	filePath := tarFilePathDir + scriptFileName
 	err = downloadFile(downloadUrl, filePath)
 	if err != nil {
@@ -79,8 +77,6 @@ func (ch *CreateCommand) execScript(downloadUrl string, args []string, timeout s
 		logrus.Errorf("unTared scriptFiles  not exist main file")
 		return "", errors.New("unTared scriptFiles  not exist main file")
 	}
-	fmt.Println("存在main命令的file,filetype", filename, fileType)
-
 	filePath = tarFilePathDir + filename
 
 	argsStr := strings.Join(args, ",")
@@ -117,7 +113,7 @@ func (ch *CreateCommand) execScript(downloadUrl string, args []string, timeout s
 		cmdArgs = append(cmdArgs, args...)
 		cmd = exec.Command("powershell.exe", cmdArgs...)
 	} else {
-		logrus.Warningf("file : %s  , format is wrong,please check !", filePath)
+		logrus.Errorf("file : %s  , format is wrong,please check !", filePath)
 		return "", errors.New(filePath + " : format is wrong!")
 	}
 
@@ -125,7 +121,7 @@ func (ch *CreateCommand) execScript(downloadUrl string, args []string, timeout s
 	result, err := cmd.CombinedOutput()
 	if err != nil {
 		checkError(GetDS().UpdateExperimentModelByUid(uid, Error, err.Error()))
-		logrus.Warningf("cmd.CombinedOutput err  : %s!", err.Error())
+		logrus.Errorf("cmd.CombinedOutput err  : %s!", err.Error())
 		return "", err
 	}
 	//超时处理
@@ -200,9 +196,10 @@ func unTar(filename, tarFilePathDir string) error {
 	// 打开tar文件
 	f, err := os.Open(filename)
 	if err != nil {
-		fmt.Println("open file err: ", err)
+		logrus.Errorf("func unTar os.Open(%s)  err  : %s!", filename, err.Error())
 		return err
 	}
+	defer f.Close()
 	// 创建一个Reader
 	reader := tar.NewReader(f)
 	for {
@@ -221,13 +218,13 @@ func unTar(filename, tarFilePathDir string) error {
 		if err != nil {
 			return err
 		}
+		defer f.Close()
 		// 写入文件中
 		_, err = io.Copy(f, reader)
 		if err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -237,14 +234,13 @@ func isExistDir(dirpathdir string) error {
 	if e != nil {
 		if os.IsNotExist(e) {
 			if e := os.MkdirAll(dirpathdir, os.ModePerm); e != nil {
-				fmt.Println(fmt.Sprintf("%v\n%s", e, debug.Stack()))
+				logrus.Errorf("func isExistDir os.MkdirAll err  : %v\n%s", e, debug.Stack())
 				return e
 			}
 		} else {
 			return e
 		}
 	}
-
 	return nil
 }
 
