@@ -113,6 +113,7 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 		if downloadUrl == "" {
 			return transport.ReturnFail(transport.ParameterEmpty, "downloadUrl")
 		}
+		isRecover := request.Params["recover"]
 		tt := request.Params["timeout"]
 		if tt != "" {
 			//errNumber checks whether timout flag is parsable as Number
@@ -123,7 +124,7 @@ func (ch *ChaosbladeHandler) Handle(request *transport.Request) *transport.Respo
 				}
 			}
 		}
-		return new(cmdexec.CreateCommand).Script(subCmd, downloadUrl, fileArgsSlice, tt)
+		return new(cmdexec.CreateCommand).Script(subCmd, downloadUrl, fileArgsSlice, tt, isRecover)
 	case category.ChaosbladeTypeDestroy:
 		//根据uid  从sqlite查询出实验的类型销毁实验
 		cmds := request.Params["cmd"]

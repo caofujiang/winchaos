@@ -27,11 +27,11 @@ import (
 type CreateCommand struct {
 }
 
-func (ch *CreateCommand) Script(subCmd, downloadUrl string, args []string, timeout string) (response *transport.Response) {
+func (ch *CreateCommand) Script(subCmd, downloadUrl string, args []string, timeout, recover string) (response *transport.Response) {
 	subCmdType := category.ChaosbladeScriptType(subCmd)
 	switch subCmdType {
 	case category.ChaosbladeScriptTypeExecute:
-		uid, err := ch.execScript(downloadUrl, args, timeout)
+		uid, err := ch.execScript(downloadUrl, args, timeout, recover)
 		if err != nil {
 			logrus.Warningf("exec Script:%s ,failed : %s ", downloadUrl, err.Error())
 			return transport.ReturnFail(transport.ScriptFileExecuteWrong, err.Error())
@@ -44,7 +44,7 @@ func (ch *CreateCommand) Script(subCmd, downloadUrl string, args []string, timeo
 	return transport.ReturnFail(transport.ScriptFileExecuteWrong, "Script subCmdType error")
 }
 
-func (ch *CreateCommand) execScript(downloadUrl string, args []string, timeout string) (uid string, err error) {
+func (ch *CreateCommand) execScript(downloadUrl string, args []string, timeout, recover string) (uid string, err error) {
 	currentPath, err := os.Getwd()
 	if err != nil {
 		logrus.Errorf("os.Getwd error : %s ", err.Error())
@@ -77,7 +77,16 @@ func (ch *CreateCommand) execScript(downloadUrl string, args []string, timeout s
 		logrus.Errorf("unTared scriptFiles  not exist main file")
 		return "", errors.New("unTared scriptFiles  not exist main file")
 	}
-	filePath = tarFilePathDir + filename
+	if recover == "true" {
+		if fileType == ".bat" {
+			filePath = tarFilePathDir + "recover.bat"
+		}
+		if fileType == ".ps1" {
+			filePath = tarFilePathDir + "recover.ps1"
+		}
+	} else {
+		filePath = tarFilePathDir + filename
+	}
 
 	argsStr := strings.Join(args, ",")
 	//surfix := path.Ext(scriptFileName)
